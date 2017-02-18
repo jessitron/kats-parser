@@ -7,5 +7,5 @@ object ParserPlay extends App {
 
   val parseTree = ElmParser.parse(content)
 
-  println(parseTree)
+  println(TreeNodePrinter.drawTree(parseTree))
 }

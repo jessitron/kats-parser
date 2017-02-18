@@ -2,6 +2,9 @@ package com.jessitron.kats
 
 object TreeNodePrinter {
 
+  def drawTree: SyntaxNode => String = draw[SyntaxNode](_.childNodes,
+    n=> s"${n.name}" + n.valueOption.map(" is <" + _ + ">").getOrElse(""))
+
   /**
    * TreeNodePrinter utility.
    * It draws a cute tree like
