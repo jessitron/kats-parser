@@ -43,3 +43,19 @@ editor:
     branch: "master"
     sha: "26ac88b*"
 
+---
+kind: "operation"
+client: "rug-cli 0.23.1-SNAPSHOT"
+editor:
+  name: "atomist-rugs.scala-editors.MakeRugLanguageExtension"
+  group: "atomist-rugs"
+  artifact: "scala-editors"
+  version: "0.1.0"
+  origin:
+    repo: "git@github.com:atomist-rugs/scala-editors"
+    branch: "master"
+    sha: "e5b63eb*"
+  parameters:
+    - "package": "com.jessitron.kats"
+    - "type_name": "Elm"
+
