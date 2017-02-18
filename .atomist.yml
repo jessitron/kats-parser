@@ -30,3 +30,16 @@ editor:
   parameters:
     - "package": "com.jessitron.kats"
 
+---
+kind: "operation"
+client: "rug-cli 0.23.1-SNAPSHOT"
+editor:
+  name: "WrapFunctionBody"
+  group: "jessitron"
+  artifact: "kats-rugs"
+  version: "0.1.0"
+  origin:
+    repo: "git@github.com:jessitron/kats-rugs.git"
+    branch: "master"
+    sha: "26ac88b*"
+
