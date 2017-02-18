@@ -1,0 +1,17 @@
+---
+kind: "operation"
+client: "rug-cli 0.23.1-SNAPSHOT"
+generator:
+  name: "NewScalaProject"
+  group: "atomist-rugs"
+  artifact: "scala-project"
+  version: "0.1.0"
+  origin:
+    repo: "git@github.com:atomist-rugs/scala-project.git"
+    branch: "master"
+    sha: "ecce4eb"
+  parameters:
+    - "group_id": "jessitron"
+    - "package": "com.jessitron.kats"
+    - "project_name": "kats-parser"
+
