@@ -10,7 +10,7 @@ object ElmParser extends RegexParsers {
 
   def exposure = lowercaseIdentifier("exposedFunction") | uppercaseIdentifier("exposedType")
 
-  def exposings: Parser[Seq[SyntaxNode]] = "exposing" ~ "(" ~> rep1sep(exposure, ",") <~ ")"
+  def exposings: Parser[Seq[PositionedSyntaxNode]] = "exposing" ~ "(" ~> rep1sep(exposure, ",") <~ ")"
 
 
   def moduleDeclaration: Parser[PositionedSyntaxNode] = positionedNode("module" ~> uppercaseIdentifier("moduleName") ~ exposings ^^
@@ -74,7 +74,7 @@ object ElmParser extends RegexParsers {
 
 
 
-  def parse(content: String): SyntaxNode = {
+  def parse(content: String): PositionedSyntaxNode = {
     parseAll(elmModule, content) match {
       case Success(result, next) => result
       case _: NoSuccess => ???
@@ -108,7 +108,7 @@ object SyntaxNode {
   def leaf(name: String)(value: String): SyntaxNode =
     SyntaxNode(name, Seq(), Some(value))
 
-  def parent(name: String, children: Seq[SyntaxNode]): SyntaxNode =
+  def parent(name: String, children: Seq[PositionedSyntaxNode]): SyntaxNode =
     SyntaxNode(name, children, None)
 }
 

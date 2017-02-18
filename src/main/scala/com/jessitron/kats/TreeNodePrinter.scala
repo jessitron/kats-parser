@@ -2,8 +2,8 @@ package com.jessitron.kats
 
 object TreeNodePrinter {
 
-  def drawTree: SyntaxNode => String = draw[SyntaxNode](_.childNodes,
-    n=> s"${n.name}" + n.valueOption.map(" is <" + _ + ">").getOrElse(""))
+  def drawTree: PositionedSyntaxNode => String = draw[PositionedSyntaxNode](_.childNodes,
+    n=>  s"[${n.start}-${n.end}] ${n.name}" + n.valueOption.map(" is " + _).getOrElse(""))
 
   /**
    * TreeNodePrinter utility.
