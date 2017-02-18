@@ -4,7 +4,7 @@ import scala.util.parsing.combinator.RegexParsers
 
 object ElmParser extends RegexParsers {
 
-  def uppercaseIdentifier(name: String) : Parser[SyntaxNode] = "[A-Z][A-Za-z0-9_]*".r ^^ SyntaxNode.leaf(name)
+  def uppercaseIdentifier(name: String) : Parser[PositionedSyntaxNode] = positionedNode("[A-Z][A-Za-z0-9_]*".r ^^ SyntaxNode.leaf(name))
 
   def lowercaseIdentifier(name: String) : Parser[SyntaxNode] = "[a-z][A-Za-z0-9_]*".r ^^ SyntaxNode.leaf(name)
 
@@ -81,10 +81,25 @@ object ElmParser extends RegexParsers {
     }
   }
 
+  def positionedNode(inner: Parser[SyntaxNode] ) = new Parser[PositionedSyntaxNode] {
+    override def apply(in: Input): ParseResult[PositionedSyntaxNode] = {
+      val start = handleWhiteSpace(in.source, in.offset)
+      inner.apply(in) match {
+        case Error(msg, next) => Error(msg, next)
+        case Failure(msg, next) => Failure(msg, next)
+        case Success(result, next) =>
+          val end = next.offset
+          Success(PositionedSyntaxNode(result.name, result.childNodes, result.valueOption,
+            start, end), next)
+      }
+    }
+  }
+
+
 }
 
 case class SyntaxNode(name: String,
-                      childNodes: Seq[SyntaxNode],
+                      childNodes: Seq[PositionedSyntaxNode],
                       valueOption: Option[String])
 
 object SyntaxNode {
@@ -95,3 +110,9 @@ object SyntaxNode {
   def parent(name: String, children: Seq[SyntaxNode]): SyntaxNode =
     SyntaxNode(name, children, None)
 }
+
+case class PositionedSyntaxNode(name: String,
+                                childNodes: Seq[PositionedSyntaxNode],
+                                valueOption: Option[String],
+                                start: Int,
+                                end: Int)
