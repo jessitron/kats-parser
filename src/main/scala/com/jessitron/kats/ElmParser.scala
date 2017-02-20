@@ -1,5 +1,7 @@
 package com.jessitron.kats
 
+import com.atomist.tree.content.text.MinimalPositionedTreeNode
+
 import scala.util.parsing.combinator.RegexParsers
 
 object ElmParser extends RegexParsers {
@@ -113,7 +115,7 @@ object SyntaxNode {
 }
 
 case class PositionedSyntaxNode(name: String,
-                                childNodes: Seq[PositionedSyntaxNode],
-                                valueOption: Option[String],
+                                override val childNodes: Seq[PositionedSyntaxNode],
+                                override val valueOption: Option[String],
                                 start: Int,
-                                end: Int)
+                                end: Int) extends MinimalPositionedTreeNode
