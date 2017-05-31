@@ -28,7 +28,9 @@ object ElmParser extends RegexParsers {
     }
   }
 
-  def exposure = lowercaseIdentifier("exposedFunction") | uppercaseIdentifier("exposedType")
+  def exposure = lowercaseIdentifier("exposedFunction") | uppercaseIdentifier("exposedType") | exposeAll
+
+  def exposeAll = positionedNode(".." ^^ SyntaxNode.leaf("exposeAll"))
 
   def exposings: Parser[Seq[PositionedSyntaxNode]] = "exposing" ~ "(" ~> rep1sep(exposure, ",") <~ ")"
 
