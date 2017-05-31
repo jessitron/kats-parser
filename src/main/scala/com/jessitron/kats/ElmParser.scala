@@ -152,7 +152,9 @@ object ElmParser extends RegexParsers {
       typ => SyntaxNode.parent(name, Seq(typ))
     })
 
-    def elmTypeExceptFunction: Parser[PositionedSyntaxNode] = typeReference | recordType | tupleType | hint("an Elm Type")
+    def elmTypeExceptFunction: Parser[PositionedSyntaxNode] = typeReference | recordType | tupleType | parensAroundType | hint("an Elm Type")
+
+    private def parensAroundType: Parser[PositionedSyntaxNode] = "(" ~> elmType("insideParens") <~ ")"
 
     private def functionType: Parser[PositionedSyntaxNode] =
       positionedNode(rep1sep(elmTypeExceptFunction, "->") ^^ {
