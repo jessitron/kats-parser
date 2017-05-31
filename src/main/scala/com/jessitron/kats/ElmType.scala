@@ -17,4 +17,12 @@ class ElmType extends TypeUnderFile {
   }
 
   override def description: String = "elmy elminess"
+
+  override def preprocess(originalContent: String): String =
+    originalContent.replaceAll("(?m)^(\\S)", "\\☞$1")
+
+  // strip the preprocess marks
+  override def postprocess(preprocessedContent: String): String =
+    preprocessedContent.replaceAll("(?m)^\\☞", "")
+
 }

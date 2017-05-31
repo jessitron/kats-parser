@@ -34,14 +34,14 @@ object ElmParser extends RegexParsers {
 
   def exposings: Parser[Seq[PositionedSyntaxNode]] = "exposing" ~ "(" ~> rep1sep(exposure, ",") <~ ")"
 
-  def docString: Parser[PositionedSyntaxNode] = positionedNode(("{-|" ~> "[\\s\\S]*?\\-\\}".r) ^^ SyntaxNode.leaf("docstring"))
+  def docString: Parser[PositionedSyntaxNode] = positionedNode(("☞{-|" ~> "[\\s\\S]*?☞\\-\\}".r) ^^ SyntaxNode.leaf("docstring"))
 
   def moduleDeclaration: Parser[PositionedSyntaxNode] =
-    positionedNode("module" ~> uppercaseIdentifier("moduleName") ~ exposings ~ opt(docString) ^^ {
+    positionedNode("☞module" ~> uppercaseIdentifier("moduleName") ~ exposings ~ opt(docString) ^^ {
       case name ~ exposings ~ doc => SyntaxNode.parent("moduleDeclaration", Seq(name) ++ exposings ++ doc.toSeq) })
 
   def importStatement: Parser[PositionedSyntaxNode] =
-    positionedNode("import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ^^ { case name ~ exposings => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq.flatten) })
+    positionedNode("☞import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ^^ { case name ~ exposings => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq.flatten) })
 
 
   import ElmFunction.functionDeclaration
@@ -54,7 +54,7 @@ object ElmParser extends RegexParsers {
   def freeText = "[^\n]*\n".r ^^ { line => line.substring(0, line.length - 1) }
 
   def sectionHeader =
-    positionedNode(("--" ~> freeText) ^^ SyntaxNode.leaf("sectionHeader"))
+    positionedNode(("☞--" ~> freeText) ^^ SyntaxNode.leaf("sectionHeader"))
 
   import ElmTypes.typeAliasDeclaration
   import ElmTypes.unionTypeDeclaration
@@ -124,13 +124,13 @@ object ElmParser extends RegexParsers {
     import ElmDecomposition._
 
     def functionDeclaration: Parser[PositionedSyntaxNode] =
-      positionedNode(opt(docString) ~ opt(functionTypeDeclaration) ~ lowercaseIdentifier("functionName") ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
-        case docStringOption ~ typeOption ~ name ~ params ~ "=" ~ body =>
+      positionedNode(opt(docString) ~ opt(functionTypeDeclaration) ~ "☞" ~ lowercaseIdentifier("functionName") ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
+        case docStringOption ~ typeOption ~ _ ~ name ~ params ~ "=" ~ body =>
           SyntaxNode.parent("functionDeclaration",
             docStringOption.toSeq ++ typeOption.toSeq ++ (name +: params :+ body))
       })
 
-    private def functionTypeDeclaration: Parser[PositionedSyntaxNode] = positionedNode(lowercaseIdentifier("functionName") ~ ":" ~ elmType("declaredType") ^^ {
+    private def functionTypeDeclaration: Parser[PositionedSyntaxNode] = positionedNode("☞" ~> lowercaseIdentifier("functionName") ~ ":" ~ elmType("declaredType") ^^ {
       case name ~ ":" ~ typ => SyntaxNode.parent("typeDeclaration", Seq(name, typ))
     })
 
@@ -139,7 +139,7 @@ object ElmParser extends RegexParsers {
   object ElmDecomposition {
     def matchable: Parser[PositionedSyntaxNode] = constructor | matchableExceptConstructor
 
-    def matchableExceptConstructor = lowercaseIdentifier("identifier") | hint("a pattern")
+    private def matchableExceptConstructor = lowercaseIdentifier("identifier") | hint("a pattern")
 
     private def constructor = positionedNode(uppercaseIdentifier("constructor") ~ rep(matchableExceptConstructor) ^^ {
       case name ~ patterns => SyntaxNode.parent("constructorPattern", name +: patterns)
@@ -186,14 +186,14 @@ object ElmParser extends RegexParsers {
 
     def typeAliasDeclaration: Parser[PositionedSyntaxNode] =
       positionedNode(
-        opt(docString) ~ "type alias" ~ uppercaseIdentifier("typeName") ~ "=" ~ elmType("definition") ^^ {
+        opt(docString) ~ "☞type alias" ~ uppercaseIdentifier("typeName") ~ "=" ~ elmType("definition") ^^ {
           case docString ~ _ ~ name ~ _ ~ definition =>
             SyntaxNode.parent("typeAlias", docString.toSeq ++ Seq(name, definition))
         }
       )
 
     def unionTypeDeclaration: Parser[PositionedSyntaxNode] =
-      positionedNode(opt(docString) ~ "type" ~ uppercaseIdentifier("typeName") ~ rep(lowercaseIdentifier("typeParameter")) ~ "=" ~ rep1sep(elmType("constructor"), "|") ^^ {
+      positionedNode(opt(docString) ~ "☞type" ~ uppercaseIdentifier("typeName") ~ rep(lowercaseIdentifier("typeParameter")) ~ "=" ~ rep1sep(elmType("constructor"), "|") ^^ {
         case docString ~ _ ~ name ~ params ~  _ ~ constructors =>
           SyntaxNode.parent("unionTypeDeclaration",
             docString.toSeq ++ Seq(name) ++ params ++ constructors)
