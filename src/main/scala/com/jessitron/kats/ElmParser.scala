@@ -152,7 +152,8 @@ object ElmParser extends RegexParsers {
       typ => SyntaxNode.parent(name, Seq(typ))
     })
 
-    def elmTypeExceptFunction: Parser[PositionedSyntaxNode] = typeReference | recordType | tupleType | parensAroundType | hint("an Elm Type")
+    def elmTypeExceptFunction: Parser[PositionedSyntaxNode] =
+      typeReference | variableTypeReference| recordType | tupleType | parensAroundType | hint("an Elm Type")
 
     private def parensAroundType: Parser[PositionedSyntaxNode] = "(" ~> elmType("insideParens") <~ ")"
 
@@ -162,20 +163,26 @@ object ElmParser extends RegexParsers {
         case more => SyntaxNode.parent("functionType", more)
       })
 
-    private def typeReference: Parser[PositionedSyntaxNode] = positionedNode(uppercaseIdentifier("typeName") ~ rep(elmType("typeParameter")) ^^ {
+    private def typeReference: Parser[PositionedSyntaxNode] =
+      positionedNode(uppercaseIdentifier("typeName") ~ rep(elmType("typeParameter")) ^^ {
       case typeName ~ parameters => SyntaxNode.parent("typeReference", typeName +: parameters)
     })
 
-    private def tupleType: Parser[PositionedSyntaxNode] = positionedNode("(" ~> rep1sep(elmType("tupleTypePart"), ",") <~ ")" ^^ { parts =>
+    private def variableTypeReference = lowercaseIdentifier("typeVariable")
+
+    private def tupleType: Parser[PositionedSyntaxNode] =
+      positionedNode("(" ~> rep1sep(elmType("tupleTypePart"), ",") <~ ")" ^^ { parts =>
       SyntaxNode.parent("tupleType", parts)
     })
 
-    private def recordTypeFieldDeclaration: Parser[PositionedSyntaxNode] = positionedNode(lowercaseIdentifier("fieldNameDeclaration") ~ ":" ~ elmType("fieldTypeDeclaration") ^^ {
+    private def recordTypeFieldDeclaration: Parser[PositionedSyntaxNode] =
+      positionedNode(lowercaseIdentifier("fieldNameDeclaration") ~ ":" ~ elmType("fieldTypeDeclaration") ^^ {
       case name ~ _ ~ typ => SyntaxNode.parent("recordTypeField", Seq(name, typ))
     })
 
     private def recordType: Parser[PositionedSyntaxNode] =
-      positionedNode("{" ~> repsep(recordTypeFieldDeclaration,",") <~ "}" ^^ { fields => SyntaxNode.parent("recordType", fields) })
+      positionedNode("{" ~> repsep(recordTypeFieldDeclaration,",") <~ "}" ^^ {
+        fields => SyntaxNode.parent("recordType", fields) })
 
     def typeAliasDeclaration: Parser[PositionedSyntaxNode] =
       positionedNode(
