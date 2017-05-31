@@ -1,6 +1,7 @@
 package com.jessitron.kats
 
 import com.atomist.rug.kind.grammar.ParsedNode
+import com.jessitron.kats.ElmParser.ElmTypes.elmType
 import com.jessitron.kats.ElmParser.positionedNode
 
 import scala.util.parsing.combinator.RegexParsers
@@ -52,9 +53,10 @@ object ElmParser extends RegexParsers {
 
   object ElmExpression {
 
-    def expression(name: String): Parser[PositionedSyntaxNode] = positionedNode((functionApplication | listLiteral | stringLiteral) ^^ {
-      case expr => SyntaxNode.parent(name, Seq(expr))
-    })
+    def expression(name: String): Parser[PositionedSyntaxNode] =
+      positionedNode((functionApplication | listLiteral | stringLiteral | recordLiteral | tupleLiteral | hint("an Elm Expression")) ^^ {
+        case expr => SyntaxNode.parent(name, Seq(expr))
+      })
 
     def functionApplication: Parser[PositionedSyntaxNode] = positionedNode(qualifiedLowercaseIdentifier("calledFunction") ~ rep(expression("argument")) ^^ {
       case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
@@ -66,6 +68,16 @@ object ElmParser extends RegexParsers {
 
     def stringLiteral: Parser[PositionedSyntaxNode] = positionedNode(""""[^"]*"""".r ^^ SyntaxNode.leaf("stringLiteral"))
 
+    private def recordLiteralField: Parser[PositionedSyntaxNode] = positionedNode(lowercaseIdentifier("fieldName") ~ "=" ~ expression("fieldValue") ^^ {
+      case name ~ _ ~ typ => SyntaxNode.parent("recordLiteralField", Seq(name, typ))
+    })
+
+    private def recordLiteral: Parser[PositionedSyntaxNode] =
+      positionedNode("{" ~> rep(recordLiteralField) <~ "}" ^^ { fields => SyntaxNode.parent("recordLiteral", fields) })
+
+    private def tupleLiteral: Parser[PositionedSyntaxNode] = positionedNode("(" ~> rep1sep(expression("tuplePart"), ",") <~ ")" ^^ { parts =>
+      SyntaxNode.parent("tupleLiteral", parts)
+    })
   }
 
   import ElmExpression.expression
@@ -83,10 +95,7 @@ object ElmParser extends RegexParsers {
       case name ~ ":" ~ typ => SyntaxNode.parent("typeDeclaration", Seq(name, typ))
     })
 
-
   }
-
-  def hint(clue: String): Parser[PositionedSyntaxNode] = clue ^^ {_ => throw new RuntimeException(s"I want an example of ${clue}, not literally '${clue}'")}
 
   object ElmTypes {
 
@@ -95,7 +104,8 @@ object ElmParser extends RegexParsers {
     })
 
     private def typeReference: Parser[PositionedSyntaxNode] = positionedNode(uppercaseIdentifier("typeName") ~ rep(elmType("typeParameter")) ^^ {
-      case typeName ~ parameters => SyntaxNode.parent("typeReference", typeName +: parameters)})
+      case typeName ~ parameters => SyntaxNode.parent("typeReference", typeName +: parameters)
+    })
 
     private def tupleType: Parser[PositionedSyntaxNode] = positionedNode("(" ~> rep1sep(elmType("tupleTypePart"), ",") <~ ")" ^^ { parts =>
       SyntaxNode.parent("tupleType", parts)
@@ -116,6 +126,9 @@ object ElmParser extends RegexParsers {
       )
   }
 
+  def hint(clue: String): Parser[PositionedSyntaxNode] = clue ^^ {
+    _ => throw new RuntimeException(s"I want an example of ${clue}, not literally '${clue}'")
+  }
 
   def parse(content: String): PositionedSyntaxNode = {
     parseAll(elmModule, content) match {
