@@ -90,12 +90,16 @@ object ElmParser extends RegexParsers {
 
   object ElmTypes {
 
-    def elmType(name: String): Parser[PositionedSyntaxNode] = positionedNode((typeReference | recordType | hint("an Elm Type")) ^^ {
+    def elmType(name: String): Parser[PositionedSyntaxNode] = positionedNode((typeReference | recordType | tupleType | hint("an Elm Type")) ^^ {
       typ => SyntaxNode.parent(name, Seq(typ))
     })
 
     private def typeReference: Parser[PositionedSyntaxNode] = positionedNode(uppercaseIdentifier("typeName") ~ rep(elmType("typeParameter")) ^^ {
       case typeName ~ parameters => SyntaxNode.parent("typeReference", typeName +: parameters)})
+
+    private def tupleType: Parser[PositionedSyntaxNode] = positionedNode("(" ~> rep1sep(elmType("tupleTypePart"), ",") <~ ")" ^^ { parts =>
+      SyntaxNode.parent("tupleType", parts)
+    })
 
     private def recordTypeFieldDeclaration: Parser[PositionedSyntaxNode] = positionedNode(lowercaseIdentifier("fieldNameDeclaration") ~ ":" ~ elmType("fieldTypeDeclaration") ^^ {
       case name ~ _ ~ typ => SyntaxNode.parent("recordTypeField", Seq(name, typ))
