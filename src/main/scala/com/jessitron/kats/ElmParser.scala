@@ -184,10 +184,10 @@ object ElmParser extends RegexParsers {
       )
 
     def unionTypeDeclaration: Parser[PositionedSyntaxNode] =
-      positionedNode(opt(docString) ~ "type" ~ uppercaseIdentifier("typeName") ~ "=" ~ rep1sep(elmType("constructor"), "|") ^^ {
-        case docString ~ _ ~ name ~ _ ~ constructors =>
+      positionedNode(opt(docString) ~ "type" ~ uppercaseIdentifier("typeName") ~ rep(lowercaseIdentifier("typeParameter")) ~ "=" ~ rep1sep(elmType("constructor"), "|") ^^ {
+        case docString ~ _ ~ name ~ params ~  _ ~ constructors =>
           SyntaxNode.parent("unionTypeDeclaration",
-            docString.toSeq ++ Seq(name) ++ constructors)
+            docString.toSeq ++ Seq(name) ++ params ++ constructors)
       })
   }
 
