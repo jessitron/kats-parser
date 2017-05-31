@@ -13,10 +13,11 @@ object ElmParser extends RegexParsers {
   protected def identifier = new Parser[String] {
     val underlying = "[a-z][A-Za-z0-9_]*".r
     val reservedWords = Seq("type")
+
     def apply(in: Input): ParseResult[String] = {
       val pr = underlying.apply(in)
       pr match {
-        case succ: Success[String @unchecked] =>
+        case succ: Success[String@unchecked] =>
           if (reservedWords.contains(succ.get))
             Failure(s"Cannot use reserved word '${succ.get}' as identifier", succ.next)
           else
@@ -52,9 +53,10 @@ object ElmParser extends RegexParsers {
     positionedNode(("--" ~> freeText) ^^ SyntaxNode.leaf("sectionHeader"))
 
   import ElmTypes.typeAliasDeclaration
+  import ElmTypes.unionTypeDeclaration
 
   def section =
-    positionedNode(sectionHeader ~ rep(functionDeclaration | typeAliasDeclaration) ^^ { case (header ~ fns) => SyntaxNode.parent("section", header +: fns) })
+    positionedNode(sectionHeader ~ rep(functionDeclaration | typeAliasDeclaration | unionTypeDeclaration) ^^ { case (header ~ fns) => SyntaxNode.parent("section", header +: fns) })
 
 
   def qualifiedLowercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode(opt(rep1sep(uppercaseIdentifier("component"), ".") <~ ".") ~ lowercaseIdentifier(name) ^^ {
@@ -100,10 +102,12 @@ object ElmParser extends RegexParsers {
   object ElmFunction {
 
     import ElmTypes._
+    import ElmDecomposition._
 
     def functionDeclaration: Parser[PositionedSyntaxNode] =
-      positionedNode(opt(functionTypeDeclaration) ~ lowercaseIdentifier("functionName") ~ "=" ~ expression("body") ^^ {
-        case typeOption ~ name ~ "=" ~ body => SyntaxNode.parent("functionDeclaration", typeOption.toSeq ++ Seq(name, body))
+      positionedNode(opt(functionTypeDeclaration) ~ lowercaseIdentifier("functionName") ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
+        case typeOption ~ name ~ params ~ "=" ~ body =>
+          SyntaxNode.parent("functionDeclaration", typeOption.toSeq ++ (name +: params :+ body))
       })
 
     private def functionTypeDeclaration: Parser[PositionedSyntaxNode] = positionedNode(lowercaseIdentifier("functionName") ~ ":" ~ elmType("declaredType") ^^ {
@@ -112,11 +116,23 @@ object ElmParser extends RegexParsers {
 
   }
 
+  object ElmDecomposition {
+    def matchable: Parser[PositionedSyntaxNode] = lowercaseIdentifier("identifier")
+  }
+
   object ElmTypes {
 
-    def elmType(name: String): Parser[PositionedSyntaxNode] = positionedNode((typeReference | recordType | tupleType | hint("an Elm Type")) ^^ {
+    def elmType(name: String): Parser[PositionedSyntaxNode] = positionedNode((functionType | elmTypeExceptFunction) ^^ {
       typ => SyntaxNode.parent(name, Seq(typ))
     })
+
+    def elmTypeExceptFunction: Parser[PositionedSyntaxNode] = typeReference | recordType | tupleType | hint("an Elm Type")
+
+    private def functionType: Parser[PositionedSyntaxNode] =
+      positionedNode(rep1sep(elmTypeExceptFunction, "->") ^^ {
+        case one if one.length == 1 => SyntaxNode.unposition(one.head)
+        case more => SyntaxNode.parent("functionType", more)
+      })
 
     private def typeReference: Parser[PositionedSyntaxNode] = positionedNode(uppercaseIdentifier("typeName") ~ rep(elmType("typeParameter")) ^^ {
       case typeName ~ parameters => SyntaxNode.parent("typeReference", typeName +: parameters)
@@ -141,9 +157,9 @@ object ElmParser extends RegexParsers {
       )
 
     def unionTypeDeclaration: Parser[PositionedSyntaxNode] =
-    positionedNode("type" ~> uppercaseIdentifier("typeName") ~ "=" ~ rep1sep(elmType("constructor"), "|") ^^ {
-      case name ~ _ ~ constructors => SyntaxNode.parent("unionTypeDeclaration", name +: constructors)
-    })
+      positionedNode("type" ~> uppercaseIdentifier("typeName") ~ "=" ~ rep1sep(elmType("constructor"), "|") ^^ {
+        case name ~ _ ~ constructors => SyntaxNode.parent("unionTypeDeclaration", name +: constructors)
+      })
   }
 
   def hint(clue: String): Parser[PositionedSyntaxNode] = clue ^^ {
@@ -186,6 +202,10 @@ object SyntaxNode {
 
   def parent(name: String, children: Seq[PositionedSyntaxNode]): SyntaxNode =
     SyntaxNode(name, children, None)
+
+  def unposition(positionedSyntaxNode: PositionedSyntaxNode): SyntaxNode = {
+    SyntaxNode(positionedSyntaxNode.nodeName, Seq(), positionedSyntaxNode.valueOption)
+  }
 }
 
 case class PositionedSyntaxNode(override val nodeName: String,
