@@ -1,8 +1,6 @@
 package com.jessitron.kats
 
 import com.atomist.rug.kind.grammar.ParsedNode
-import com.jessitron.kats.ElmParser.ElmTypes.elmType
-import com.jessitron.kats.ElmParser.positionedNode
 
 import scala.util.parsing.combinator.RegexParsers
 
@@ -10,7 +8,24 @@ object ElmParser extends RegexParsers {
 
   def uppercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode("[A-Z][A-Za-z0-9_]*".r ^^ SyntaxNode.leaf(name))
 
-  def lowercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode("[a-z][A-Za-z0-9_]*".r ^^ SyntaxNode.leaf(name))
+  def lowercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode(identifier ^^ SyntaxNode.leaf(name))
+
+  protected def identifier = new Parser[String] {
+    val underlying = "[a-z][A-Za-z0-9_]*".r
+    val reservedWords = Seq("type")
+    def apply(in: Input): ParseResult[String] = {
+      val pr = underlying.apply(in)
+      pr match {
+        case succ: Success[String @unchecked] =>
+          if (reservedWords.contains(succ.get))
+            Failure(s"Cannot use reserved word '${succ.get}' as identifier", succ.next)
+          else
+            Success[String](succ.get, succ.next)
+        case f: Failure => f
+        case _ => ???
+      }
+    }
+  }
 
   def exposure = lowercaseIdentifier("exposedFunction") | uppercaseIdentifier("exposedType")
 
@@ -124,6 +139,11 @@ object ElmParser extends RegexParsers {
           case name ~ _ ~ definition => SyntaxNode.parent("typeAlias", Seq(name, definition))
         }
       )
+
+    def unionTypeDeclaration: Parser[PositionedSyntaxNode] =
+    positionedNode("type" ~> uppercaseIdentifier("typeName") ~ "=" ~ rep1sep(elmType("constructor"), "|") ^^ {
+      case name ~ _ ~ constructors => SyntaxNode.parent("unionTypeDeclaration", name +: constructors)
+    })
   }
 
   def hint(clue: String): Parser[PositionedSyntaxNode] = clue ^^ {
