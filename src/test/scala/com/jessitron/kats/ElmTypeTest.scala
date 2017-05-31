@@ -10,14 +10,18 @@ class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
 
     val pmv = projectFromDirectory(sourceProjectLocation)
 
-    val expr = """/src//Elm()//functionApplication[/calledFunction[@value="text"]]/argument/stringLiteral"""
+    val expr =
+      """/src/BeginnerProgram.elm/Elm()//functionDeclaration
+        |             [/functionName[@value="view"]]
+        |             /body/functionApplication[//calledFunction[@value="div"]]
+        |                  /argument[2]""".stripMargin
 
     val nodes = evaluatePathExpression(pmv, expr)
 
-    nodes.head.update("\"Hello Mike\"")
+    nodes.head.update("[ Html.text \"Hello World\" ]")
 
-    val newContent = pmv.findFile("src/Main.elm").content
-    assert(newContent.contains("Mike"))
+    val newContent = pmv.findFile("src/BeginnerProgram.elm").content
+    assert(newContent.contains("Hello World"))
 
     println("New content: ------\n" + newContent + "\n--------")
 
