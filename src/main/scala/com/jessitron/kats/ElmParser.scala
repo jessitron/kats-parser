@@ -86,9 +86,11 @@ object ElmParser extends RegexParsers {
 
   }
 
+  def hint(clue: String): Parser[PositionedSyntaxNode] = clue ^^ {_ => throw new RuntimeException(s"I want an example of ${clue}, not literally '${clue}'")}
+
   object ElmTypes {
 
-    def elmType(name: String): Parser[PositionedSyntaxNode] = positionedNode((typeReference | recordType) ^^ {
+    def elmType(name: String): Parser[PositionedSyntaxNode] = positionedNode((typeReference | recordType | hint("an Elm Type")) ^^ {
       typ => SyntaxNode.parent(name, Seq(typ))
     })
 
