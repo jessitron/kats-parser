@@ -6,7 +6,7 @@ import org.scalatest.FlatSpec
 class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
 
   it should "change my source code" in {
-    val sourceProjectLocation = "/Users/jessitron/code/elm/Kats"
+    val sourceProjectLocation = "/Users/jessitron/code/jessitron/elm-rugs"
 
     val pmv = projectFromDirectory(sourceProjectLocation)
 

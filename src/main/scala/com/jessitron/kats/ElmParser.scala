@@ -1,31 +1,44 @@
 package com.jessitron.kats
 
-import com.atomist.tree.content.text.MinimalPositionedTreeNode
+import com.atomist.rug.kind.grammar.ParsedNode
+import com.jessitron.kats.ElmParser.positionedNode
 
 import scala.util.parsing.combinator.RegexParsers
 
 object ElmParser extends RegexParsers {
 
-  def uppercaseIdentifier(name: String) : Parser[PositionedSyntaxNode] = positionedNode("[A-Z][A-Za-z0-9_]*".r ^^ SyntaxNode.leaf(name))
+  def uppercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode("[A-Z][A-Za-z0-9_]*".r ^^ SyntaxNode.leaf(name))
 
-  def lowercaseIdentifier(name: String) : Parser[PositionedSyntaxNode] = positionedNode("[a-z][A-Za-z0-9_]*".r ^^ SyntaxNode.leaf(name))
+  def lowercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode("[a-z][A-Za-z0-9_]*".r ^^ SyntaxNode.leaf(name))
 
   def exposure = lowercaseIdentifier("exposedFunction") | uppercaseIdentifier("exposedType")
 
   def exposings: Parser[Seq[PositionedSyntaxNode]] = "exposing" ~ "(" ~> rep1sep(exposure, ",") <~ ")"
 
 
-  def moduleDeclaration: Parser[PositionedSyntaxNode] = positionedNode("module" ~> uppercaseIdentifier("moduleName") ~ exposings ^^
-  { case name ~ exposings => SyntaxNode.parent("moduleDeclaration", Seq(name) ++  exposings)})
+  def moduleDeclaration: Parser[PositionedSyntaxNode] =
+    positionedNode("module" ~> uppercaseIdentifier("moduleName") ~ exposings ^^ { case name ~ exposings => SyntaxNode.parent("moduleDeclaration", Seq(name) ++ exposings) })
 
-  def importStatement: Parser[PositionedSyntaxNode] = positionedNode("import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ^^
-    { case name ~ exposings => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq.flatten)})
+  def importStatement: Parser[PositionedSyntaxNode] =
+    positionedNode("import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ^^ { case name ~ exposings => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq.flatten) })
 
 
   import ElmFunction.functionDeclaration
-  def elmModule: Parser[PositionedSyntaxNode] = positionedNode(moduleDeclaration ~ rep(importStatement) ~ rep(functionDeclaration) ^^ {
-    case name ~ imports ~ fns => SyntaxNode.parent("elmModule", Seq(name) ++ imports ++ fns)
-  })
+
+  def elmModule: Parser[PositionedSyntaxNode] =
+    positionedNode(moduleDeclaration ~ rep(importStatement) ~ rep(functionDeclaration) ~ rep(section) ^^ {
+      case name ~ imports ~ fns ~ sections => SyntaxNode.parent("elmModule", Seq(name) ++ imports ++ fns ++ sections)
+    })
+
+  def freeText = "[^\n]*\n".r ^^ { line => line.substring(0, line.length - 1) }
+
+  def sectionHeader =
+    positionedNode(("--" ~> freeText) ^^ SyntaxNode.leaf("sectionHeader"))
+
+  import ElmTypes.typeAliasDeclaration
+
+  def section =
+    positionedNode(sectionHeader ~ rep(functionDeclaration | typeAliasDeclaration) ^^ { case (header ~ fns) => SyntaxNode.parent("section", header +: fns) })
 
 
   def qualifiedLowercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode(opt(rep1sep(uppercaseIdentifier("component"), ".") <~ ".") ~ lowercaseIdentifier(name) ^^ {
@@ -59,31 +72,53 @@ object ElmParser extends RegexParsers {
 
   object ElmFunction {
 
+    import ElmTypes._
+
     def functionDeclaration: Parser[PositionedSyntaxNode] =
       positionedNode(opt(functionTypeDeclaration) ~ lowercaseIdentifier("functionName") ~ "=" ~ expression("body") ^^ {
         case typeOption ~ name ~ "=" ~ body => SyntaxNode.parent("functionDeclaration", typeOption.toSeq ++ Seq(name, body))
       })
 
-    private    def functionTypeDeclaration: Parser[PositionedSyntaxNode] = positionedNode(lowercaseIdentifier("functionName") ~ ":" ~ elmType("declaredType") ^^ {
+    private def functionTypeDeclaration: Parser[PositionedSyntaxNode] = positionedNode(lowercaseIdentifier("functionName") ~ ":" ~ elmType("declaredType") ^^ {
       case name ~ ":" ~ typ => SyntaxNode.parent("typeDeclaration", Seq(name, typ))
     })
 
-    private    def elmType(name: String): Parser[PositionedSyntaxNode] = positionedNode(uppercaseIdentifier("typeName") ~ rep(elmType("typeParameter")) ^^ {
-      case typeName ~ parameters => SyntaxNode.parent(name, typeName +: parameters)
-    })
 
   }
 
+  object ElmTypes {
+
+    def elmType(name: String): Parser[PositionedSyntaxNode] = positionedNode((typeReference | recordType) ^^ {
+      typ => SyntaxNode.parent(name, Seq(typ))
+    })
+
+    private def typeReference: Parser[PositionedSyntaxNode] = positionedNode(uppercaseIdentifier("typeName") ~ rep(elmType("typeParameter")) ^^ {
+      case typeName ~ parameters => SyntaxNode.parent("typeReference", typeName +: parameters)})
+
+    private def recordTypeFieldDeclaration: Parser[PositionedSyntaxNode] = positionedNode(lowercaseIdentifier("fieldNameDeclaration") ~ ":" ~ elmType("fieldTypeDeclaration") ^^ {
+      case name ~ _ ~ typ => SyntaxNode.parent("recordTypeField", Seq(name, typ))
+    })
+
+    private def recordType: Parser[PositionedSyntaxNode] =
+      positionedNode("{" ~> rep(recordTypeFieldDeclaration) <~ "}" ^^ { fields => SyntaxNode.parent("recordType", fields) })
+
+    def typeAliasDeclaration: Parser[PositionedSyntaxNode] =
+      positionedNode(
+        "type alias" ~> uppercaseIdentifier("typeName") ~ "=" ~ elmType("definition") ^^ {
+          case name ~ _ ~ definition => SyntaxNode.parent("typeAlias", Seq(name, definition))
+        }
+      )
+  }
 
 
   def parse(content: String): PositionedSyntaxNode = {
     parseAll(elmModule, content) match {
       case Success(result, next) => result
-      case _: NoSuccess => ???
+      case x: NoSuccess => throw new RuntimeException(x.toString)
     }
   }
 
-  def positionedNode(inner: Parser[SyntaxNode] ) = new Parser[PositionedSyntaxNode] {
+  def positionedNode(inner: Parser[SyntaxNode]) = new Parser[PositionedSyntaxNode] {
     override def apply(in: Input): ParseResult[PositionedSyntaxNode] = {
       val start = handleWhiteSpace(in.source, in.offset)
       inner.apply(in) match {
@@ -114,8 +149,8 @@ object SyntaxNode {
     SyntaxNode(name, children, None)
 }
 
-case class PositionedSyntaxNode(name: String,
-                                override val childNodes: Seq[PositionedSyntaxNode],
-                                override val valueOption: Option[String],
-                                start: Int,
-                                end: Int) extends MinimalPositionedTreeNode
+case class PositionedSyntaxNode(override val nodeName: String,
+                                override val parsedNodes: Seq[PositionedSyntaxNode],
+                                valueOption: Option[String],
+                                override val startOffset: Int,
+                                override val endOffset: Int) extends ParsedNode

@@ -1,14 +1,12 @@
 package com.jessitron.kats
 
-import com.atomist.rug.kind.grammar.TypeUnderFile
+import com.atomist.rug.kind.grammar.{ParsedNode, TypeUnderFile}
 import com.atomist.source.FileArtifact
-import com.atomist.tree.content.text.PositionedTreeNode
-import com.atomist.tree.content.text.grammar.MatchListener
 
 class ElmType extends TypeUnderFile {
   override def isOfType(f: FileArtifact): Boolean = f.name.endsWith(".elm")
 
-  override def fileToRawNode(f: FileArtifact, ml: Option[MatchListener]): Option[PositionedTreeNode] = {
+  override def fileToRawNode(f: FileArtifact): Option[ParsedNode] = {
        Some(ElmParser.parse(f.content))
   }
 
