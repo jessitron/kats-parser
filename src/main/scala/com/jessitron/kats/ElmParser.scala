@@ -28,6 +28,7 @@ object ElmParser extends RegexParsers {
     }
   }
 
+
   def exposure = lowercaseIdentifier("exposedFunction") | uppercaseIdentifier("exposedType") | exposeAll
 
   def exposeAll = positionedNode(".." ^^ SyntaxNode.leaf("exposeAll"))
@@ -77,19 +78,25 @@ object ElmParser extends RegexParsers {
   object ElmExpression {
 
     def expression(name: String): Parser[PositionedSyntaxNode] =
-      positionedNode((functionApplication | listLiteral | stringLiteral | recordLiteral | tupleLiteral | switch | hint("an Elm Expression")) ^^ {
+      positionedNode((functionApplication | listLiteral | stringLiteral | intLiteral | recordLiteral | tupleLiteral | switch | expressionInParens | hint("an Elm Expression")) ^^ {
         case expr => SyntaxNode.parent(name, Seq(expr))
       })
 
-    def functionApplication: Parser[PositionedSyntaxNode] = positionedNode(qualifiedLowercaseIdentifier("calledFunction") ~ rep(expression("argument")) ^^ {
+    private def intLiteral = positionedNode("[0-9]+".r ^^ SyntaxNode.leaf("intLiteral"))
+
+    private def expressionInParens = "(" ~> expression("insideParens") <~ ")"
+
+    private def weirdBuildInFunction: Parser[PositionedSyntaxNode] = positionedNode("(,)" ^^ SyntaxNode.leaf("calledFunction"))
+
+    private def functionApplication: Parser[PositionedSyntaxNode] = positionedNode((qualifiedLowercaseIdentifier("calledFunction") | weirdBuildInFunction) ~ rep(expression("argument")) ^^ {
       case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
     })
 
-    def listLiteral: Parser[PositionedSyntaxNode] = positionedNode("[" ~> repsep(expression("listItem"), ",") <~ "]" ^^ {
+    private def listLiteral: Parser[PositionedSyntaxNode] = positionedNode("[" ~> repsep(expression("listItem"), ",") <~ "]" ^^ {
       items => SyntaxNode.parent("listLiteral", items)
     })
 
-    def stringLiteral: Parser[PositionedSyntaxNode] = positionedNode(""""[^"]*"""".r ^^ SyntaxNode.leaf("stringLiteral"))
+    private def stringLiteral: Parser[PositionedSyntaxNode] = positionedNode(""""[^"]*"""".r ^^ SyntaxNode.leaf("stringLiteral"))
 
     private def recordLiteralField: Parser[PositionedSyntaxNode] = positionedNode(lowercaseIdentifier("fieldName") ~ "=" ~ expression("fieldValue") ^^ {
       case name ~ _ ~ typ => SyntaxNode.parent("recordLiteralField", Seq(name, typ))
