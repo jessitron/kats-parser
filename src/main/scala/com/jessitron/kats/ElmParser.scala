@@ -177,8 +177,9 @@ object ElmParser extends RegexParsers {
 
     def typeAliasDeclaration: Parser[PositionedSyntaxNode] =
       positionedNode(
-        "type alias" ~> uppercaseIdentifier("typeName") ~ "=" ~ elmType("definition") ^^ {
-          case name ~ _ ~ definition => SyntaxNode.parent("typeAlias", Seq(name, definition))
+        opt(docString) ~ "type alias" ~ uppercaseIdentifier("typeName") ~ "=" ~ elmType("definition") ^^ {
+          case docString ~ _ ~ name ~ _ ~ definition =>
+            SyntaxNode.parent("typeAlias", docString.toSeq ++ Seq(name, definition))
         }
       )
 
