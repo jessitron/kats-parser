@@ -90,7 +90,7 @@ object ElmParser extends RegexParsers {
     })
 
     private def recordLiteral: Parser[PositionedSyntaxNode] =
-      positionedNode("{" ~> rep(recordLiteralField) <~ "}" ^^ { fields => SyntaxNode.parent("recordLiteral", fields) })
+      positionedNode("{" ~> repsep(recordLiteralField,",") <~ "}" ^^ { fields => SyntaxNode.parent("recordLiteral", fields) })
 
     private def tupleLiteral: Parser[PositionedSyntaxNode] =
       positionedNode("(" ~> rep1sep(expression("tuplePart"), ",") <~ ")" ^^ { parts =>
@@ -166,7 +166,7 @@ object ElmParser extends RegexParsers {
     })
 
     private def recordType: Parser[PositionedSyntaxNode] =
-      positionedNode("{" ~> rep(recordTypeFieldDeclaration) <~ "}" ^^ { fields => SyntaxNode.parent("recordType", fields) })
+      positionedNode("{" ~> repsep(recordTypeFieldDeclaration,",") <~ "}" ^^ { fields => SyntaxNode.parent("recordType", fields) })
 
     def typeAliasDeclaration: Parser[PositionedSyntaxNode] =
       positionedNode(
