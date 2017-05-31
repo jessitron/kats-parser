@@ -32,9 +32,11 @@ object ElmParser extends RegexParsers {
 
   def exposings: Parser[Seq[PositionedSyntaxNode]] = "exposing" ~ "(" ~> rep1sep(exposure, ",") <~ ")"
 
+  def docString: Parser[PositionedSyntaxNode] = positionedNode(("{-|" ~> "[\\s\\S]*?\\-\\}".r) ^^ SyntaxNode.leaf("docstring"))
 
   def moduleDeclaration: Parser[PositionedSyntaxNode] =
-    positionedNode("module" ~> uppercaseIdentifier("moduleName") ~ exposings ^^ { case name ~ exposings => SyntaxNode.parent("moduleDeclaration", Seq(name) ++ exposings) })
+    positionedNode("module" ~> uppercaseIdentifier("moduleName") ~ exposings ~ opt(docString) ^^ {
+      case name ~ exposings ~ doc => SyntaxNode.parent("moduleDeclaration", Seq(name) ++ exposings ++ doc.toSeq) })
 
   def importStatement: Parser[PositionedSyntaxNode] =
     positionedNode("import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ^^ { case name ~ exposings => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq.flatten) })
@@ -43,7 +45,7 @@ object ElmParser extends RegexParsers {
   import ElmFunction.functionDeclaration
 
   def elmModule: Parser[PositionedSyntaxNode] =
-    positionedNode(moduleDeclaration ~ rep(importStatement) ~ rep(functionDeclaration) ~ rep(section) ^^ {
+    positionedNode(moduleDeclaration ~ rep(importStatement) ~ rep(topLevel) ~ rep(section) ^^ {
       case name ~ imports ~ fns ~ sections => SyntaxNode.parent("elmModule", Seq(name) ++ imports ++ fns ++ sections)
     })
 
@@ -56,8 +58,10 @@ object ElmParser extends RegexParsers {
   import ElmTypes.unionTypeDeclaration
 
   def section =
-    positionedNode(sectionHeader ~ rep(functionDeclaration | typeAliasDeclaration | unionTypeDeclaration) ^^ { case (header ~ fns) => SyntaxNode.parent("section", header +: fns) })
+    positionedNode(sectionHeader ~ rep(topLevel) ^^ { case (header ~ fns) => SyntaxNode.parent("section", header +: fns) })
 
+
+  def topLevel = functionDeclaration | typeAliasDeclaration | unionTypeDeclaration
 
   def qualifiedLowercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode(opt(rep1sep(uppercaseIdentifier("component"), ".") <~ ".") ~ lowercaseIdentifier(name) ^^ {
     case None ~ p => SyntaxNode.parent(name, Seq(p))
