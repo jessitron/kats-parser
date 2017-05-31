@@ -124,9 +124,10 @@ object ElmParser extends RegexParsers {
     import ElmDecomposition._
 
     def functionDeclaration: Parser[PositionedSyntaxNode] =
-      positionedNode(opt(functionTypeDeclaration) ~ lowercaseIdentifier("functionName") ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
-        case typeOption ~ name ~ params ~ "=" ~ body =>
-          SyntaxNode.parent("functionDeclaration", typeOption.toSeq ++ (name +: params :+ body))
+      positionedNode(opt(docString) ~ opt(functionTypeDeclaration) ~ lowercaseIdentifier("functionName") ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
+        case docStringOption ~ typeOption ~ name ~ params ~ "=" ~ body =>
+          SyntaxNode.parent("functionDeclaration",
+            docStringOption.toSeq ++ typeOption.toSeq ++ (name +: params :+ body))
       })
 
     private def functionTypeDeclaration: Parser[PositionedSyntaxNode] = positionedNode(lowercaseIdentifier("functionName") ~ ":" ~ elmType("declaredType") ^^ {
@@ -182,8 +183,10 @@ object ElmParser extends RegexParsers {
       )
 
     def unionTypeDeclaration: Parser[PositionedSyntaxNode] =
-      positionedNode("type" ~> uppercaseIdentifier("typeName") ~ "=" ~ rep1sep(elmType("constructor"), "|") ^^ {
-        case name ~ _ ~ constructors => SyntaxNode.parent("unionTypeDeclaration", name +: constructors)
+      positionedNode(opt(docString) ~ "type" ~ uppercaseIdentifier("typeName") ~ "=" ~ rep1sep(elmType("constructor"), "|") ^^ {
+        case docString ~ _ ~ name ~ _ ~ constructors =>
+          SyntaxNode.parent("unionTypeDeclaration",
+            docString.toSeq ++ Seq(name) ++ constructors)
       })
   }
 
