@@ -12,7 +12,7 @@ object ElmParser extends RegexParsers {
 
   protected def identifier = new Parser[String] {
     val underlying = "[a-z][A-Za-z0-9_]*".r
-    val reservedWords = Seq("type")
+    val reservedWords = Seq("type", "case", "of")
 
     def apply(in: Input): ParseResult[String] = {
       val pr = underlying.apply(in)
@@ -71,7 +71,7 @@ object ElmParser extends RegexParsers {
   object ElmExpression {
 
     def expression(name: String): Parser[PositionedSyntaxNode] =
-      positionedNode((functionApplication | listLiteral | stringLiteral | recordLiteral | tupleLiteral | hint("an Elm Expression")) ^^ {
+      positionedNode((functionApplication | listLiteral | stringLiteral | recordLiteral | tupleLiteral | switch | hint("an Elm Expression")) ^^ {
         case expr => SyntaxNode.parent(name, Seq(expr))
       })
 
@@ -92,9 +92,22 @@ object ElmParser extends RegexParsers {
     private def recordLiteral: Parser[PositionedSyntaxNode] =
       positionedNode("{" ~> rep(recordLiteralField) <~ "}" ^^ { fields => SyntaxNode.parent("recordLiteral", fields) })
 
-    private def tupleLiteral: Parser[PositionedSyntaxNode] = positionedNode("(" ~> rep1sep(expression("tuplePart"), ",") <~ ")" ^^ { parts =>
-      SyntaxNode.parent("tupleLiteral", parts)
-    })
+    private def tupleLiteral: Parser[PositionedSyntaxNode] =
+      positionedNode("(" ~> rep1sep(expression("tuplePart"), ",") <~ ")" ^^ { parts =>
+        SyntaxNode.parent("tupleLiteral", parts)
+      })
+
+    private def switch: Parser[PositionedSyntaxNode] =
+      positionedNode("case" ~> expression("pivot") ~ "of" ~ rep(switchClause) ^^ {
+        case pivot ~ _ ~ clauses => SyntaxNode.parent("caseExpression", pivot +: clauses)
+      })
+
+    import ElmDecomposition.matchable
+
+    private def switchClause: Parser[PositionedSyntaxNode] =
+      positionedNode(matchable ~ "->" ~ expression("result") ^^ {
+        case pattern ~ _ ~ result => SyntaxNode.parent("clause", Seq(pattern, result))
+      })
   }
 
   import ElmExpression.expression
@@ -117,7 +130,13 @@ object ElmParser extends RegexParsers {
   }
 
   object ElmDecomposition {
-    def matchable: Parser[PositionedSyntaxNode] = lowercaseIdentifier("identifier")
+    def matchable: Parser[PositionedSyntaxNode] = constructor | matchableExceptConstructor
+
+    def matchableExceptConstructor = lowercaseIdentifier("identifier") | hint("a pattern")
+
+    private def constructor = positionedNode(uppercaseIdentifier("constructor") ~ rep(matchableExceptConstructor) ^^ {
+      case name ~ patterns => SyntaxNode.parent("constructorPattern", name +: patterns)
+    } )
   }
 
   object ElmTypes {
