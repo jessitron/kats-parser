@@ -111,7 +111,7 @@ object ElmParser extends RegexParsers {
         case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
       })
 
-    private def infixFunction = positionedNode("[\\+\\-\\*]+".r ^^ SyntaxNode.leaf("calledFunction"))
+    private def infixFunction = positionedNode("[\\+\\-\\*<>&]+[=]?".r ^^ SyntaxNode.leaf("calledFunction"))
 
     private def infixFunctionApplication =
       positionedNode(wrap("argument", expressionOtherThanInfixFunctionApplication) ~ infixFunction ~ expression("argument") ^^ {
