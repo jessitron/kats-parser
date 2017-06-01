@@ -260,17 +260,20 @@ object ElmParser extends RegexParsers {
   }
 
   object ElmDecomposition {
-    def matchable: Parser[PositionedSyntaxNode] = constructor | matchableExceptConstructor
+    def matchable: Parser[PositionedSyntaxNode] = constructorWithArgs | matchableExceptConstructor
 
     private def matchableExceptConstructor =
       lowercaseIdentifier("identifier") |
         ignored |
         tupleDecomposition |
+        noArgConstructor |
         hint("a pattern")
 
-    private def constructor = positionedNode(qualifiedUppercaseIdentifier("constructor") ~ rep(matchableExceptConstructor) ^^ {
+    private def constructorWithArgs = positionedNode(qualifiedUppercaseIdentifier("constructor") ~ rep1(matchableExceptConstructor) ^^ {
       case name ~ patterns => SyntaxNode.parent("constructorPattern", name +: patterns)
     })
+
+    private def noArgConstructor = qualifiedUppercaseIdentifier("constructor")
 
     private def ignored = positionedNode("_" ^^ SyntaxNode.leaf("ignored"))
 
