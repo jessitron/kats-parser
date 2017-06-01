@@ -90,15 +90,20 @@ object ElmParser extends RegexParsers {
 
   def qualifiedUppercaseIdentifier(name: String): Parser[PositionedSyntaxNode] =
     positionedNode(rep1sep(uppercaseIdentifier("component"), ".") ^^ {
-    SyntaxNode.parent(name, _)
-  })
+      SyntaxNode.parent(name, _)
+    })
 
   def comment: Parser[PositionedSyntaxNode] = {
     def restOfLine = "[^\n]*\n".r ^^ { line => line.substring(0, line.length - 1) }
+
     def delimitedComment = "\\{-.*?-\\}".r
+
     def restOfLineComment = "--" ~> restOfLine
+
     positionedNode((delimitedComment | restOfLineComment) ^^ SyntaxNode.leaf("comment"))
   }
+
+  def moveLeft: Parser[String] = "❡"
 
   object ElmExpression {
 
@@ -165,8 +170,8 @@ object ElmParser extends RegexParsers {
       })
 
     private def ifExpression =
-      positionedNode("if" ~> expression("condition") ~ "then" ~ expression("thenBody") ~ "else" ~ expression("elseBody") ^^ {
-        case condition ~ _ ~ ifBody ~ _ ~ elseBody => SyntaxNode.parent("if", Seq(condition, ifBody, elseBody))
+      positionedNode("if" ~> expression("condition") ~ "then" ~ expression("thenBody") ~ opt(moveLeft) ~ "else" ~ expression("elseBody") ^^ {
+        case condition ~ _ ~ ifBody ~ _ ~ _ ~ elseBody => SyntaxNode.parent("if", Seq(condition, ifBody, elseBody))
       })
 
     private def switch: Parser[PositionedSyntaxNode] =
@@ -187,9 +192,10 @@ object ElmParser extends RegexParsers {
       case matchable ~ _ ~ body => SyntaxNode.parent("decomposingDeclaration", Seq(matchable, body))
     })
 
-    private def letExpression = positionedNode("let" ~> rep1(functionDeclaration("") | decomposition) ~ "in" ~ expression("body") ^^ {
-      case declarations ~ _ ~ body => SyntaxNode.parent("let", declarations :+ body)
-    })
+    private def letExpression = positionedNode(
+      "let" ~> rep1(functionDeclaration("") | decomposition) ~ opt(moveLeft) ~ "in" ~ expression("body") ^^ {
+        case declarations ~ _ ~ _ ~ body => SyntaxNode.parent("let", declarations :+ body)
+      })
   }
 
   import ElmExpression.expression
@@ -201,7 +207,7 @@ object ElmParser extends RegexParsers {
 
     def topLevel =
       functionDeclaration() |
-      typeAliasDeclaration |
+        typeAliasDeclaration |
         unionTypeDeclaration |
         infixPrecedenceDeclaration |
         ("☞" ~> comment)
