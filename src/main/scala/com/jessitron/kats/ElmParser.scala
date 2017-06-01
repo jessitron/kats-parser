@@ -279,10 +279,15 @@ object ElmParser extends RegexParsers {
         tupleDecomposition |
         noArgConstructor |
         listDecomposition |
+        recordDecomposition |
         hint("a pattern")
 
     private def listDecomposition = positionedNode("[" ~> repsep(matchable, ",") <~ "]" ^^ {
       elems => SyntaxNode.parent("listPattern", elems)
+    })
+
+    private def recordDecomposition = positionedNode("{" ~> repsep(matchable, ",") <~ "}" ^^ {
+      elems => SyntaxNode.parent("recordPattern", elems)
     })
 
     private def consPattern = positionedNode((matchableWithClearPrecedence ~ "::" ~ matchable) ^^ {
@@ -315,7 +320,12 @@ object ElmParser extends RegexParsers {
     })
 
     def elmTypeExceptFunction: Parser[PositionedSyntaxNode] =
-      typeReference | variableTypeReference | recordType | tupleType | parensAroundType | hint("an Elm Type")
+      typeReference |
+        variableTypeReference |
+        recordType |
+        tupleType |
+        parensAroundType |
+        hint("an Elm Type")
 
     private def parensAroundType: Parser[PositionedSyntaxNode] = "(" ~> elmType("insideParens") <~ ")"
 
@@ -326,7 +336,7 @@ object ElmParser extends RegexParsers {
       })
 
     private def typeReference: Parser[PositionedSyntaxNode] =
-      positionedNode(uppercaseIdentifier("typeName") ~ rep(elmType("typeParameter")) ^^ {
+      positionedNode(qualifiedUppercaseIdentifier("typeName") ~ rep(elmType("typeParameter")) ^^ {
         case typeName ~ parameters => SyntaxNode.parent("typeReference", typeName +: parameters)
       })
 
