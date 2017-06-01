@@ -28,7 +28,7 @@ object ElmParser extends RegexParsers {
     }
   }
 
-  val infixFunctionRegex = "[\\+\\-\\*<>&=,/]+".r
+  val infixFunctionRegex = "[\\+\\-\\*<>&=,/|^%]+".r
 
   def functionName = {
     def infixFunctionTechnicalName: Parser[String] = "(" ~ infixFunctionRegex ~ ")" ^^ { case a ~ b ~ c => a + b + c}
@@ -186,7 +186,8 @@ object ElmParser extends RegexParsers {
             docStringOption.toSeq ++ typeOption.toSeq ++ (name +: params :+ body))
       })
 
-    private def functionTypeDeclaration(lineBegin: Parser[String]): Parser[PositionedSyntaxNode] = positionedNode(lineBegin ~> lowercaseIdentifier("functionName") ~ ":" ~ elmType("declaredType") ^^ {
+    private def functionTypeDeclaration(lineBegin: Parser[String]): Parser[PositionedSyntaxNode] =
+      positionedNode(lineBegin ~> functionName ~ ":" ~ elmType("declaredType") ^^ {
       case name ~ ":" ~ typ => SyntaxNode.parent("typeDeclaration", Seq(name, typ))
     })
 
