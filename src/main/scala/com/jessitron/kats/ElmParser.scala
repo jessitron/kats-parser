@@ -75,10 +75,8 @@ object ElmParser extends RegexParsers {
       case name ~ imports ~ fns ~ sections => SyntaxNode.parent("elmModule", Seq(name) ++ imports ++ fns ++ sections)
     })
 
-  def freeText = "[^\n]*\n".r ^^ { line => line.substring(0, line.length - 1) }
-
   def sectionHeader =
-    positionedNode(("☞--" ~> freeText) ^^ SyntaxNode.leaf("sectionHeader"))
+    positionedNode(("☞--" ~> "[A-Z\\s]+".r <~ "\n") ^^ SyntaxNode.leaf("sectionHeader"))
 
 
   def section =
@@ -94,7 +92,12 @@ object ElmParser extends RegexParsers {
     SyntaxNode.parent(name, _)
   })
 
-  def comment: Parser[PositionedSyntaxNode] = positionedNode("\\{-.*?-\\}".r ^^ SyntaxNode.leaf("comment"))
+  def comment: Parser[PositionedSyntaxNode] = {
+    def restOfLine = "[^\n]*\n".r ^^ { line => line.substring(0, line.length - 1) }
+    def delimitedComment = "\\{-.*?-\\}".r
+    def restOfLineComment = "--" ~> restOfLine
+    positionedNode((delimitedComment | restOfLineComment) ^^ SyntaxNode.leaf("comment"))
+  }
 
   object ElmExpression {
 
@@ -193,7 +196,12 @@ object ElmParser extends RegexParsers {
     import ElmTypes._
     import ElmDecomposition._
 
-    def topLevel = functionDeclaration() | typeAliasDeclaration | unionTypeDeclaration | infixPrecedenceDeclaration
+    def topLevel =
+      functionDeclaration() |
+      typeAliasDeclaration |
+        unionTypeDeclaration |
+        infixPrecedenceDeclaration |
+        ("☞" ~> comment)
 
     def functionDeclaration(lineBegin: Parser[String] = "☞"): Parser[PositionedSyntaxNode] =
       positionedNode(opt(docString) ~ opt(functionTypeDeclaration(lineBegin)) ~ lineBegin ~ functionName ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
