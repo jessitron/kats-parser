@@ -28,24 +28,35 @@ object ElmParser extends RegexParsers {
     }
   }
 
+  val infixFunctionRegex = "[\\+\\-\\*<>&=,]+".r
+
+  def functionName = {
+    def infixFunctionTechnicalName: Parser[String] = "(" ~ infixFunctionRegex ~ ")" ^^ { case a ~ b ~ c => a + b + c}
+
+    positionedNode((identifier | infixFunctionTechnicalName) ^^ SyntaxNode.leaf("functionName"))
+  }
+
   def docString: Parser[PositionedSyntaxNode] = positionedNode(("☞{-|" ~> "[\\s\\S]*?☞\\-\\}".r) ^^ SyntaxNode.leaf("docstring"))
 
   object Module {
 
-    private def exposure = lowercaseIdentifier("exposedFunction") | uppercaseIdentifier("exposedType") | exposeAll
+    private def exposure = functionName | uppercaseIdentifier("exposedType") | exposeAll
 
     private def exposeAll = positionedNode(".." ^^ SyntaxNode.leaf("exposeAll"))
 
-    private def exposings: Parser[Seq[PositionedSyntaxNode]] = "exposing" ~ "(" ~> rep1sep(exposure, ",") <~ ")"
+    private def exposings: Parser[PositionedSyntaxNode] = positionedNode("exposing" ~ "(" ~> rep1sep(exposure, ",") <~ ")" ^^ {
+      exp => SyntaxNode.parent("exposing", exp)
+    })
 
 
     def moduleDeclaration: Parser[PositionedSyntaxNode] =
       positionedNode("☞module" ~> uppercaseIdentifier("moduleName") ~ exposings ~ opt(docString) ^^ {
-        case name ~ exposings ~ doc => SyntaxNode.parent("moduleDeclaration", Seq(name) ++ exposings ++ doc.toSeq)
+        case name ~ exposings ~ doc => SyntaxNode.parent("moduleDeclaration", Seq(name, exposings) ++ doc.toSeq)
       })
 
     def importStatement: Parser[PositionedSyntaxNode] =
-      positionedNode("☞import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ^^ { case name ~ exposings => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq.flatten) })
+      positionedNode("☞import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ^^ {
+        case name ~ exposings => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq) })
 
   }
 
@@ -69,9 +80,9 @@ object ElmParser extends RegexParsers {
 
   def topLevel = functionDeclaration() | typeAliasDeclaration | unionTypeDeclaration
 
-  def qualifiedLowercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode(opt(rep1sep(uppercaseIdentifier("component"), ".") <~ ".") ~ lowercaseIdentifier(name) ^^ {
-    case None ~ p => SyntaxNode.parent(name, Seq(p))
-    case Some(packages) ~ p => SyntaxNode.parent(name, packages :+ p)
+  def qualifiedFunctionName: Parser[PositionedSyntaxNode] = positionedNode(opt(rep1sep(uppercaseIdentifier("component"), ".") <~ ".") ~ functionName ^^ {
+    case None ~ p => SyntaxNode.unposition(p)
+    case Some(packages) ~ p => SyntaxNode.parent("qualifiedFunctionName", packages :+ p)
   })
 
   def qualifiedUppercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode(rep1sep(uppercaseIdentifier("component"), ".") ^^ {
@@ -104,11 +115,8 @@ object ElmParser extends RegexParsers {
 
     private def expressionInParens = "(" ~> expression("insideParens") <~ ")"
 
-    private def weirdBuiltInFunction: Parser[PositionedSyntaxNode] =
-      positionedNode("(,)" ^^ SyntaxNode.leaf("calledFunction"))
-
     private def functionApplication: Parser[PositionedSyntaxNode] =
-      positionedNode((qualifiedLowercaseIdentifier("calledFunction") | weirdBuiltInFunction) ~ rep(expression("argument")) ^^ {
+      positionedNode((qualifiedFunctionName) ~ rep(expression("argument")) ^^ {
         case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
       })
 
@@ -116,7 +124,7 @@ object ElmParser extends RegexParsers {
       case fn ~ args => SyntaxNode.parent("constructorApplication", fn +: args)
     })
 
-    private def infixFunction = positionedNode("[\\+\\-\\*<>&=]+".r ^^ SyntaxNode.leaf("calledFunction"))
+    private def infixFunction = positionedNode(infixFunctionRegex ^^ SyntaxNode.leaf("infixFunction"))
 
     private def infixFunctionApplication =
       positionedNode(wrap("argument", expressionOtherThanInfixFunctionApplication) ~ infixFunction ~ expression("argument") ^^ {
@@ -166,7 +174,7 @@ object ElmParser extends RegexParsers {
     import ElmDecomposition._
 
     def functionDeclaration(lineBegin: Parser[String] = "☞"): Parser[PositionedSyntaxNode] =
-      positionedNode(opt(docString) ~ opt(functionTypeDeclaration(lineBegin)) ~ lineBegin ~ lowercaseIdentifier("functionName") ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
+      positionedNode(opt(docString) ~ opt(functionTypeDeclaration(lineBegin)) ~ lineBegin ~ functionName ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
         case docStringOption ~ typeOption ~ _ ~ name ~ params ~ "=" ~ body =>
           SyntaxNode.parent("functionDeclaration",
             docStringOption.toSeq ++ typeOption.toSeq ++ (name +: params :+ body))
