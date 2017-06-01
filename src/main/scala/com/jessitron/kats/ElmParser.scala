@@ -28,7 +28,7 @@ object ElmParser extends RegexParsers {
     }
   }
 
-  val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=,/|^%]+".r | "-"
+  val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=,/|^%:]+".r | "-"
 
   def functionName: Parser[PositionedSyntaxNode] = {
     def infixFunctionTechnicalName: Parser[String] = "(" ~ infixFunctionRegex ~ ")" ^^ { case a ~ b ~ c => a + b + c }
@@ -123,6 +123,7 @@ object ElmParser extends RegexParsers {
       charLiteral |
       recordLiteral |
       tupleLiteral |
+      anonymousFunction |
       ifExpression |
       switch |
       letExpression |
@@ -149,6 +150,13 @@ object ElmParser extends RegexParsers {
     private def infixFunctionApplication =
       positionedNode(wrap("argument", expressionOtherThanInfixFunctionApplication) ~ infixFunction ~ expression("argument") ^^ {
         case left ~ fn ~ right => SyntaxNode.parent("functionApplication", Seq(left, fn, right))
+      })
+
+    import ElmDecomposition.matchable
+
+    private def anonymousFunction =
+      positionedNode("(" ~ "\\" ~> rep1(matchable) ~ "->" ~ expression("body") <~ ")" ^^ {
+        case params ~ _ ~ body => SyntaxNode.parent("anonymousFunction", params :+ body);
       })
 
     private def listLiteral: Parser[PositionedSyntaxNode] = positionedNode("[" ~> repsep(expression("listItem"), ",") <~ "]" ^^ {
@@ -184,7 +192,7 @@ object ElmParser extends RegexParsers {
     private def caseClause: Parser[PositionedSyntaxNode] =
       positionedNode(opt(comment) ~ opt(moveLeft) ~> matchable ~ "->" ~ expression("result") ^^ {
         case pattern ~ _ ~ result =>
-        //  println(s"matched switch clause: ${pattern.values} -> ${result.values}")
+          //  println(s"matched switch clause: ${pattern.values} -> ${result.values}")
           SyntaxNode.parent("clause", Seq(pattern, result))
       })
 
@@ -260,18 +268,27 @@ object ElmParser extends RegexParsers {
   }
 
   object ElmDecomposition {
-    def matchable: Parser[PositionedSyntaxNode] = constructorWithArgs | matchableExceptConstructor
+    def matchable: Parser[PositionedSyntaxNode] = constructorWithArgs | consPattern | matchableWithClearPrecedence
 
-    private def matchableExceptConstructor =
+    private def matchableWithClearPrecedence =
       lowercaseIdentifier("identifier") |
         ignored |
         aliasedMatchable |
         matcherInParens |
         tupleDecomposition |
         noArgConstructor |
+        listDecomposition |
         hint("a pattern")
 
-    private def constructorWithArgs = positionedNode(qualifiedUppercaseIdentifier("constructor") ~ rep1(matchableExceptConstructor) ^^ {
+    private def listDecomposition = positionedNode("[" ~> repsep(matchable, ",") <~ "]" ^^ {
+      elems => SyntaxNode.parent("listPattern", elems)
+    })
+
+    private def consPattern = positionedNode((matchableWithClearPrecedence ~ "::" ~ matchable) ^^ {
+      case left ~ _ ~ right => SyntaxNode.parent("consPattern", Seq(left, right))
+    })
+
+    private def constructorWithArgs = positionedNode(qualifiedUppercaseIdentifier("constructor") ~ rep1(matchableWithClearPrecedence) ^^ {
       case name ~ patterns => SyntaxNode.parent("constructorPattern", name +: patterns)
     })
 
