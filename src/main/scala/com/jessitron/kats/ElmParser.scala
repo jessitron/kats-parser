@@ -94,10 +94,12 @@ object ElmParser extends RegexParsers {
     SyntaxNode.parent(name, _)
   })
 
+  def comment: Parser[PositionedSyntaxNode] = positionedNode("\\{-.*?-\\}".r ^^ SyntaxNode.leaf("comment"))
+
   object ElmExpression {
 
     def expression(name: String): Parser[PositionedSyntaxNode] =
-      positionedNode((
+      positionedNode(opt(comment) ~> (
         infixFunctionApplication |
           expressionOtherThanInfixFunctionApplication
         ) ^^ {
