@@ -55,10 +55,11 @@ object ElmParser extends RegexParsers {
       exp => SyntaxNode.parent("exposing", exp)
     })
 
+    private def where = wrap("where", "where" ~> ElmExpression.recordLiteral)
 
     def moduleDeclaration: Parser[PositionedSyntaxNode] =
-      positionedNode("☞module" ~> qualifiedUppercaseIdentifier("moduleName") ~ exposings ~ opt(docString) ^^ {
-        case name ~ exposings ~ doc => SyntaxNode.parent("moduleDeclaration", Seq(name, exposings) ++ doc.toSeq)
+      positionedNode("☞" ~ opt("effect") ~ "module" ~> qualifiedUppercaseIdentifier("moduleName") ~ opt(where) ~ exposings ~ opt(docString) ^^ {
+        case name ~ where ~ exposings ~ doc => SyntaxNode.parent("moduleDeclaration", Seq(name) ++ where.toSeq ++ Seq(exposings) ++ doc.toSeq)
       })
 
     def importStatement: Parser[PositionedSyntaxNode] =
@@ -153,7 +154,7 @@ object ElmParser extends RegexParsers {
     import ElmDecomposition.matchable
 
     private def anonymousFunction =
-      positionedNode("(" ~ "\\" ~> rep1(matchable) ~ "->" ~ expression("body") <~ opt("moveLeft") ~ ")" ^^ {
+      positionedNode("\\" ~> rep1(matchable) ~ "->" ~ expression("body") ^^ {
         case params ~ _ ~ body => SyntaxNode.parent("anonymousFunction", params :+ body);
       })
 
@@ -168,6 +169,9 @@ object ElmParser extends RegexParsers {
 
       private def intLiteral: Parser[PositionedSyntaxNode] =
         positionedNode("[0-9]+".r ^^ SyntaxNode.leaf("intLiteral"))
+
+      private def floatLiteral: Parser[PositionedSyntaxNode] =
+        positionedNode("[0-9]+\\.[0-9]+".r ^^ SyntaxNode.leaf("intLiteral"))
 
       private def charLiteral: Parser[PositionedSyntaxNode] =
         positionedNode("'.'".r ^^ SyntaxNode.leaf("charLiteral"))
@@ -185,7 +189,7 @@ object ElmParser extends RegexParsers {
       case name ~ _ ~ typ => SyntaxNode.parent("recordLiteralField", Seq(name, typ))
     })
 
-    private def recordLiteral: Parser[PositionedSyntaxNode] =
+    def recordLiteral: Parser[PositionedSyntaxNode] =
       positionedNode("{" ~> repsep(recordLiteralField, commaSeparator) <~ opt("moveLeft") ~ "}" ^^ { fields => SyntaxNode.parent("recordLiteral", fields) })
 
     private def tupleLiteral: Parser[PositionedSyntaxNode] =
