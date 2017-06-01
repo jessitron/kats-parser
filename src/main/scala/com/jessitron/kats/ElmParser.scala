@@ -133,6 +133,7 @@ object ElmParser extends RegexParsers {
     private def elmExpressionWithClearPrecedence: Parser[PositionedSyntaxNode] =
     // printAttempt("clear precedence:") |
       functionApplication | // this must be before constructorApplication
+        qualifiedFunctionName |
         constructorApplication |
         listLiteral |
         SimpleLiteral.literal |
@@ -147,6 +148,7 @@ object ElmParser extends RegexParsers {
 
     private def elmExpressionThatMightResultInARecord: Parser[PositionedSyntaxNode] =
     // printAttempt("might be a record:") |
+      qualifiedFunctionName |
       functionApplication |
         recordLiteral |
         ifExpression |
@@ -163,7 +165,7 @@ object ElmParser extends RegexParsers {
     private def expressionInParens = "(" ~> expression("insideParens") <~ opt(moveLeft) ~ ")"
 
     private def functionApplication: Parser[PositionedSyntaxNode] =
-      positionedNode((qualifiedFunctionName) ~ rep(expression("argument")) ^^ {
+      positionedNode(wrap("function", elmExpressionWithClearPrecedence) ~ rep(expression("argument")) ^^ {
         case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
       })
 

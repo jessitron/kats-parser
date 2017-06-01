@@ -6,7 +6,8 @@ import com.atomist.source.FileArtifact
 import scala.util.control.NonFatal
 
 class ElmType extends TypeUnderFile {
-  override def isOfType(f: FileArtifact): Boolean = f.name.endsWith(".elm")
+  override def isOfType(f: FileArtifact): Boolean =
+    f.name.endsWith(".elm") && !f.path.contains("/elm-stuff/")
 
   override def fileToRawNode(f: FileArtifact): Option[ParsedNode] = {
     println(s"Attempting to parse ${f.path}")
@@ -23,7 +24,7 @@ class ElmType extends TypeUnderFile {
 
   override def preprocess(originalContent: String): String = {
    val result = markMovesToTheLeft(originalContent.replaceAll("(?m)^(\\S)", "\\☞$1"))
-   // println("PREPOCESS OUTPUT\n" + result)
+   // println("PREPROCESS OUTPUT\n" + result)
     result
   }
 
