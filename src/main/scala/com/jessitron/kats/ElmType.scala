@@ -21,11 +21,32 @@ class ElmType extends TypeUnderFile {
 
   override def description: String = "elmy elminess"
 
-  override def preprocess(originalContent: String): String =
-    originalContent.replaceAll("(?m)^(\\S)", "\\☞$1")
+  override def preprocess(originalContent: String): String = {
+   val result = markMovesToTheLeft(originalContent.replaceAll("(?m)^(\\S)", "\\☞$1"))
+    println("PREPOCESS OUTPUT\n" + result)
+    result
+  }
 
   // strip the preprocess marks
   override def postprocess(preprocessedContent: String): String =
-    preprocessedContent.replaceAll("(?m)^\\☞", "")
+    preprocessedContent.replaceAll("[☞❡]", "")
+
+
+  private def markMovesToTheLeft(originalContent: String): String =
+  {
+    val firstLine = originalContent.lines.next()
+    val otherlines = originalContent.lines.sliding(2, 1).map {
+      it =>
+        val prev = it.head
+        val curr = it.last
+        val prevSpaces = prev.indexOf(prev.trim())
+        val currentSpaces = curr.indexOf(curr.trim())
+        if (0 < currentSpaces && currentSpaces < prevSpaces)
+          "❡" + curr
+        else
+          curr
+    }.toSeq
+    (firstLine +: otherlines).mkString("\n")
+  }
 
 }

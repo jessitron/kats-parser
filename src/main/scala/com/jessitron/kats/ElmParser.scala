@@ -88,7 +88,8 @@ object ElmParser extends RegexParsers {
     case Some(packages) ~ p => SyntaxNode.parent("qualifiedFunctionName", packages :+ p)
   })
 
-  def qualifiedUppercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode(rep1sep(uppercaseIdentifier("component"), ".") ^^ {
+  def qualifiedUppercaseIdentifier(name: String): Parser[PositionedSyntaxNode] =
+    positionedNode(rep1sep(uppercaseIdentifier("component"), ".") ^^ {
     SyntaxNode.parent(name, _)
   })
 
@@ -177,7 +178,9 @@ object ElmParser extends RegexParsers {
 
     private def switchClause: Parser[PositionedSyntaxNode] =
       positionedNode(matchable ~ "->" ~ expression("result") ^^ {
-        case pattern ~ _ ~ result => SyntaxNode.parent("clause", Seq(pattern, result))
+        case pattern ~ _ ~ result =>
+          println(s"matched switch clause: ${pattern.values} -> ${result.values}")
+          SyntaxNode.parent("clause", Seq(pattern, result))
       })
 
     private def decomposition = positionedNode(matchable ~ "=" ~ expression("body") ^^ {
@@ -259,7 +262,7 @@ object ElmParser extends RegexParsers {
         tupleDecomposition |
         hint("a pattern")
 
-    private def constructor = positionedNode(uppercaseIdentifier("constructor") ~ rep(matchableExceptConstructor) ^^ {
+    private def constructor = positionedNode(qualifiedUppercaseIdentifier("constructor") ~ rep(matchableExceptConstructor) ^^ {
       case name ~ patterns => SyntaxNode.parent("constructorPattern", name +: patterns)
     })
 
@@ -363,4 +366,6 @@ case class PositionedSyntaxNode(override val nodeName: String,
                                 override val parsedNodes: Seq[PositionedSyntaxNode],
                                 valueOption: Option[String],
                                 override val startOffset: Int,
-                                override val endOffset: Int) extends ParsedNode
+                                override val endOffset: Int) extends ParsedNode {
+  def values: String = valueOption.getOrElse(parsedNodes.map(_.values).mkString(" "))
+}
