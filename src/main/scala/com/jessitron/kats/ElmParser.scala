@@ -182,7 +182,7 @@ object ElmParser extends RegexParsers {
     import ElmDecomposition.matchable
 
     private def switchClause: Parser[PositionedSyntaxNode] =
-      positionedNode(matchable ~ "->" ~ expression("result") ^^ {
+      positionedNode(opt(moveLeft) ~> matchable ~ "->" ~ expression("result") ^^ {
         case pattern ~ _ ~ result =>
           println(s"matched switch clause: ${pattern.values} -> ${result.values}")
           SyntaxNode.parent("clause", Seq(pattern, result))
@@ -193,7 +193,7 @@ object ElmParser extends RegexParsers {
     })
 
     private def letExpression = positionedNode(
-      "let" ~> rep1(functionDeclaration("") | decomposition) ~ opt(moveLeft) ~ "in" ~ expression("body") ^^ {
+      "let" ~> rep1(opt(moveLeft) ~> (functionDeclaration("") | decomposition)) ~ opt(moveLeft) ~ "in" ~ expression("body") ^^ {
         case declarations ~ _ ~ _ ~ body => SyntaxNode.parent("let", declarations :+ body)
       })
   }
