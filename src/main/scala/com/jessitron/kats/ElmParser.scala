@@ -31,7 +31,7 @@ object ElmParser extends RegexParsers {
   val infixFunctionRegex = "[\\+\\-\\*<>&=,/|^%]+".r
 
   def functionName = {
-    def infixFunctionTechnicalName: Parser[String] = "(" ~ infixFunctionRegex ~ ")" ^^ { case a ~ b ~ c => a + b + c}
+    def infixFunctionTechnicalName: Parser[String] = "(" ~ infixFunctionRegex ~ ")" ^^ { case a ~ b ~ c => a + b + c }
 
     positionedNode((identifier | infixFunctionTechnicalName) ^^ SyntaxNode.leaf("functionName"))
   }
@@ -41,7 +41,7 @@ object ElmParser extends RegexParsers {
   object Module {
 
     private def exposedType =
-      positionedNode(uppercaseIdentifier("type") ~ opt( "(" ~> rep1sep(uppercaseIdentifier("constructor") | exposeAll,",") <~ ")") ^^ {
+      positionedNode(uppercaseIdentifier("type") ~ opt("(" ~> rep1sep(uppercaseIdentifier("constructor") | exposeAll, ",") <~ ")") ^^ {
         case typ ~ None => SyntaxNode.parent("exposedType", Seq(typ))
         case typ ~ Some(constructors) => SyntaxNode.parent("exposedType", typ +: constructors)
       })
@@ -62,7 +62,8 @@ object ElmParser extends RegexParsers {
 
     def importStatement: Parser[PositionedSyntaxNode] =
       positionedNode("☞import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ^^ {
-        case name ~ exposings => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq) })
+        case name ~ exposings => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq)
+      })
 
   }
 
@@ -83,8 +84,6 @@ object ElmParser extends RegexParsers {
   def section =
     positionedNode(sectionHeader ~ rep(topLevel) ^^ { case (header ~ fns) => SyntaxNode.parent("section", header +: fns) })
 
-
-  def topLevel = functionDeclaration() | typeAliasDeclaration | unionTypeDeclaration
 
   def qualifiedFunctionName: Parser[PositionedSyntaxNode] = positionedNode(opt(rep1sep(uppercaseIdentifier("component"), ".") <~ ".") ~ functionName ^^ {
     case None ~ p => SyntaxNode.unposition(p)
@@ -179,6 +178,8 @@ object ElmParser extends RegexParsers {
     import ElmTypes._
     import ElmDecomposition._
 
+    def topLevel = functionDeclaration() | typeAliasDeclaration | unionTypeDeclaration | infixPrecedenceDeclaration
+
     def functionDeclaration(lineBegin: Parser[String] = "☞"): Parser[PositionedSyntaxNode] =
       positionedNode(opt(docString) ~ opt(functionTypeDeclaration(lineBegin)) ~ lineBegin ~ functionName ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
         case docStringOption ~ typeOption ~ _ ~ name ~ params ~ "=" ~ body =>
@@ -188,11 +189,11 @@ object ElmParser extends RegexParsers {
 
     private def functionTypeDeclaration(lineBegin: Parser[String]): Parser[PositionedSyntaxNode] =
       positionedNode(lineBegin ~> functionName ~ ":" ~ elmType("declaredType") ^^ {
-      case name ~ ":" ~ typ => SyntaxNode.parent("typeDeclaration", Seq(name, typ))
-    })
+        case name ~ ":" ~ typ => SyntaxNode.parent("typeDeclaration", Seq(name, typ))
+      })
 
 
-    def typeAliasDeclaration: Parser[PositionedSyntaxNode] =
+    private def typeAliasDeclaration: Parser[PositionedSyntaxNode] =
       positionedNode(
         opt(docString) ~ "☞type alias" ~ uppercaseIdentifier("typeName") ~ "=" ~ elmType("definition") ^^ {
           case docString ~ _ ~ name ~ _ ~ definition =>
@@ -200,12 +201,27 @@ object ElmParser extends RegexParsers {
         }
       )
 
-    def unionTypeDeclaration: Parser[PositionedSyntaxNode] =
+    private def unionTypeDeclaration: Parser[PositionedSyntaxNode] =
       positionedNode(opt(docString) ~ "☞type" ~ uppercaseIdentifier("typeName") ~ rep(lowercaseIdentifier("typeParameter")) ~ "=" ~ rep1sep(elmType("constructor"), "|") ^^ {
         case docString ~ _ ~ name ~ params ~ _ ~ constructors =>
           SyntaxNode.parent("unionTypeDeclaration",
             docString.toSeq ++ Seq(name) ++ params ++ constructors)
       })
+
+    private def infixPrecedenceDeclaration: Parser[PositionedSyntaxNode] = {
+
+      def declaration = positionedNode(("infixl" | "infixr") ^^ SyntaxNode.leaf("declaration"))
+
+      def precedence = positionedNode("[0-9]".r ^^ SyntaxNode.leaf("precedence"))
+
+      def infixFn = positionedNode(infixFunctionRegex ^^ SyntaxNode.leaf("infixFunction"))
+
+      positionedNode(("☞" ~> declaration ~ precedence ~ infixFn) ^^ {
+        case declaration ~ precedence ~ infixFn => SyntaxNode.parent("infixPrecedenceDeclaration",
+          Seq(declaration, precedence, infixFn))
+      })
+    }
+
 
   }
 
