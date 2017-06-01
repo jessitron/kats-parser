@@ -12,7 +12,7 @@ object ElmParser extends RegexParsers {
 
   protected def identifier = new Parser[String] {
     val underlying = "[a-z][A-Za-z0-9_]*".r
-    val reservedWords = Seq("type", "case", "of", "let", "in", "infixr", "infixl", "infix")
+    val reservedWords = Seq("if", "then", "else", "type", "case", "of", "let", "in", "infixr", "infixl", "infix")
 
     def apply(in: Input): ParseResult[String] = {
       val pr = underlying.apply(in)
@@ -112,6 +112,7 @@ object ElmParser extends RegexParsers {
       charLiteral |
       recordLiteral |
       tupleLiteral |
+      ifExpression |
       switch |
       letExpression |
       expressionInParens |
@@ -155,6 +156,11 @@ object ElmParser extends RegexParsers {
     private def tupleLiteral: Parser[PositionedSyntaxNode] =
       positionedNode("(" ~> rep1sep(expression("tuplePart"), ",") <~ ")" ^^ { parts =>
         SyntaxNode.parent("tupleLiteral", parts)
+      })
+
+    private def ifExpression =
+      positionedNode("if" ~> expression("condition") ~ "then" ~ expression("thenBody") ~ "else" ~ expression("elseBody") ^^ {
+        case condition ~ _ ~ ifBody ~ _ ~ elseBody => SyntaxNode.parent("if", Seq(condition, ifBody, elseBody))
       })
 
     private def switch: Parser[PositionedSyntaxNode] =
