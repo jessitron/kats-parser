@@ -28,9 +28,9 @@ object ElmParser extends RegexParsers {
     }
   }
 
-  val infixFunctionRegex = "[\\+\\-\\*<>&=,/|^%]+".r
+  val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=,/|^%]+".r | "-"
 
-  def functionName = {
+  def functionName: Parser[PositionedSyntaxNode] = {
     def infixFunctionTechnicalName: Parser[String] = "(" ~ infixFunctionRegex ~ ")" ^^ { case a ~ b ~ c => a + b + c }
 
     positionedNode((identifier | infixFunctionTechnicalName) ^^ SyntaxNode.leaf("functionName"))
@@ -182,8 +182,9 @@ object ElmParser extends RegexParsers {
     import ElmDecomposition.matchable
 
     private def caseClause: Parser[PositionedSyntaxNode] =
-      positionedNode(opt(moveLeft) ~ opt(comment) ~> matchable ~ "->" ~ expression("result") ^^ {
+      positionedNode(opt(comment) ~ opt(moveLeft)  ~> matchable ~ "->" ~ expression("result") ^^ {
         case pattern ~ _ ~ result =>
+          println(s"matched switch clause: ${pattern.values} -> ${result.values}")
           SyntaxNode.parent("clause", Seq(pattern, result))
       })
 
