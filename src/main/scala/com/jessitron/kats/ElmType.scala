@@ -34,19 +34,17 @@ class ElmType extends TypeUnderFile {
 
   private def markMovesToTheLeft(originalContent: String): String =
   {
-    val firstLine = originalContent.lines.next()
-    val otherlines = originalContent.lines.sliding(2, 1).map {
-      it =>
-        val prev = it.head
-        val curr = it.last
-        val prevSpaces = prev.indexOf(prev.trim())
-        val currentSpaces = curr.indexOf(curr.trim())
-        if (0 < currentSpaces && currentSpaces < prevSpaces)
-          "❡" + curr
-        else
-          curr
-    }.toSeq
-    (firstLine +: otherlines).mkString("\n")
+    val lines = originalContent.lines.foldLeft[(Int, Seq[String])]((0, Seq())) {
+      case ((prevIndent, lines), current) =>
+        if (current.trim().isEmpty)
+          (prevIndent, lines :+ current)
+        else {
+          val currentIndent = current.indexOf(current.trim())
+          val thisLine = if (0 < currentIndent && currentIndent < prevIndent) "❡" + current else current
+          (currentIndent, lines :+ thisLine)
+        }
+    }
+    lines._2.mkString("\n")
   }
 
 }
