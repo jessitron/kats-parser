@@ -40,7 +40,13 @@ object ElmParser extends RegexParsers {
 
   object Module {
 
-    private def exposure = functionName | uppercaseIdentifier("exposedType") | exposeAll
+    private def exposedType =
+      positionedNode(uppercaseIdentifier("type") ~ opt( "(" ~> rep1sep(uppercaseIdentifier("constructor") | exposeAll,",") <~ ")") ^^ {
+        case typ ~ None => SyntaxNode.parent("exposedType", Seq(typ))
+        case typ ~ Some(constructors) => SyntaxNode.parent("exposedType", typ +: constructors)
+      })
+
+    private def exposure = functionName | exposedType | exposeAll
 
     private def exposeAll = positionedNode(".." ^^ SyntaxNode.leaf("exposeAll"))
 
