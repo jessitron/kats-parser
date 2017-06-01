@@ -28,7 +28,7 @@ object ElmParser extends RegexParsers {
     }
   }
 
-  val infixFunctionRegex = "[\\+\\-\\*<>&=,]+".r
+  val infixFunctionRegex = "[\\+\\-\\*<>&=,/]+".r
 
   def functionName = {
     def infixFunctionTechnicalName: Parser[String] = "(" ~ infixFunctionRegex ~ ")" ^^ { case a ~ b ~ c => a + b + c}
