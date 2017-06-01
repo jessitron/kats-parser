@@ -12,7 +12,7 @@ object ElmParser extends RegexParsers {
 
   protected def identifier = new Parser[String] {
     val underlying = "[a-z][A-Za-z0-9_]*".r
-    val reservedWords = Seq("type", "case", "of", "let", "in")
+    val reservedWords = Seq("type", "case", "of", "let", "in", "infixr", "infixl", "infix")
 
     def apply(in: Input): ParseResult[String] = {
       val pr = underlying.apply(in)
@@ -36,7 +36,7 @@ object ElmParser extends RegexParsers {
     positionedNode((identifier | infixFunctionTechnicalName) ^^ SyntaxNode.leaf("functionName"))
   }
 
-  def docString: Parser[PositionedSyntaxNode] = positionedNode(("☞{-|" ~> "[\\s\\S]*?☞\\-\\}".r) ^^ SyntaxNode.leaf("docstring"))
+  def docString: Parser[PositionedSyntaxNode] = positionedNode(("☞{-|" ~> "[\\s\\S]*?\\-\\}".r) ^^ SyntaxNode.leaf("docstring"))
 
   object Module {
 
@@ -210,7 +210,7 @@ object ElmParser extends RegexParsers {
 
     private def infixPrecedenceDeclaration: Parser[PositionedSyntaxNode] = {
 
-      def declaration = positionedNode(("infixl" | "infixr") ^^ SyntaxNode.leaf("declaration"))
+      def declaration = positionedNode(("infixl" | "infixr" | "infix") ^^ SyntaxNode.leaf("declaration"))
 
       def precedence = positionedNode("[0-9]".r ^^ SyntaxNode.leaf("precedence"))
 
