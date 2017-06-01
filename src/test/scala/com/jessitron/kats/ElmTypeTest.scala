@@ -11,7 +11,7 @@ class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
     val pmv = projectFromDirectory(sourceProjectLocation)
 
     val expr =
-      """//src/Dict.elm/Elm()//functionDeclaration
+      """//Elm()//functionDeclaration
         |             [/functionName[@value="view"]]
         |             /body/functionApplication[//calledFunction[@value="div"]]
         |                  /argument[2]""".stripMargin

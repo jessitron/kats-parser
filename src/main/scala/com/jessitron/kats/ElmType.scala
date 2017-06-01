@@ -23,7 +23,7 @@ class ElmType extends TypeUnderFile {
 
   override def preprocess(originalContent: String): String = {
    val result = markMovesToTheLeft(originalContent.replaceAll("(?m)^(\\S)", "\\☞$1"))
-    println("PREPOCESS OUTPUT\n" + result)
+   // println("PREPOCESS OUTPUT\n" + result)
     result
   }
 
