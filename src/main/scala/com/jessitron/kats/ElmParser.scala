@@ -12,7 +12,7 @@ object ElmParser extends RegexParsers {
 
   protected def identifier = new Parser[String] {
     val underlying = "[a-z][A-Za-z0-9_]*".r
-    val reservedWords = Seq("if", "then", "else", "type", "case", "of", "let", "in", "infixr", "infixl", "infix")
+    val reservedWords = Seq("if", "then", "else", "type", "case", "of", "let", "in", "infixr", "infixl", "infix", "as")
 
     def apply(in: Input): ParseResult[String] = {
       val pr = underlying.apply(in)
@@ -182,9 +182,9 @@ object ElmParser extends RegexParsers {
     import ElmDecomposition.matchable
 
     private def caseClause: Parser[PositionedSyntaxNode] =
-      positionedNode(opt(comment) ~ opt(moveLeft)  ~> matchable ~ "->" ~ expression("result") ^^ {
+      positionedNode(opt(comment) ~ opt(moveLeft) ~> matchable ~ "->" ~ expression("result") ^^ {
         case pattern ~ _ ~ result =>
-          println(s"matched switch clause: ${pattern.values} -> ${result.values}")
+        //  println(s"matched switch clause: ${pattern.values} -> ${result.values}")
           SyntaxNode.parent("clause", Seq(pattern, result))
       })
 
@@ -265,12 +265,20 @@ object ElmParser extends RegexParsers {
     private def matchableExceptConstructor =
       lowercaseIdentifier("identifier") |
         ignored |
+        aliasedMatchable |
+        matcherInParens |
         tupleDecomposition |
         noArgConstructor |
         hint("a pattern")
 
     private def constructorWithArgs = positionedNode(qualifiedUppercaseIdentifier("constructor") ~ rep1(matchableExceptConstructor) ^^ {
       case name ~ patterns => SyntaxNode.parent("constructorPattern", name +: patterns)
+    })
+
+    private def matcherInParens = "(" ~> matchable <~ ")"
+
+    private def aliasedMatchable = positionedNode(matcherInParens ~ "as" ~ lowercaseIdentifier("alias") ^^ {
+      case matchable ~ _ ~ alias => SyntaxNode.parent("aliasedPattern", Seq(matchable, alias))
     })
 
     private def noArgConstructor = qualifiedUppercaseIdentifier("constructor")
