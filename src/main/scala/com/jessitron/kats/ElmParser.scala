@@ -228,13 +228,21 @@ object ElmParser extends RegexParsers {
   object ElmDecomposition {
     def matchable: Parser[PositionedSyntaxNode] = constructor | matchableExceptConstructor
 
-    private def matchableExceptConstructor = lowercaseIdentifier("identifier") | ignored | hint("a pattern")
+    private def matchableExceptConstructor =
+      lowercaseIdentifier("identifier") |
+        ignored |
+        tupleDecomposition |
+        hint("a pattern")
 
     private def constructor = positionedNode(uppercaseIdentifier("constructor") ~ rep(matchableExceptConstructor) ^^ {
       case name ~ patterns => SyntaxNode.parent("constructorPattern", name +: patterns)
     })
 
     private def ignored = positionedNode("_" ^^ SyntaxNode.leaf("ignored"))
+
+    private def tupleDecomposition = positionedNode(("(" ~> rep1sep(matchable, ",") <~ ")") ^^ {
+      inners => SyntaxNode.parent("tupleDecomposition", inners)
+    })
   }
 
   object ElmTypes {
