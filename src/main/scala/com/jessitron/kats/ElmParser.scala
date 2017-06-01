@@ -4,6 +4,34 @@ import com.atomist.rug.kind.grammar.ParsedNode
 
 import scala.util.parsing.combinator.RegexParsers
 
+object ElmProcessor {
+
+  def addSpecials(originalContent:String): String =
+     markMovesToTheLeft(markBeginningOfLine(originalContent))
+
+  def removeSpecials(preprocessedContent: String): String =
+    preprocessedContent.replaceAll("[☞❡]", "")
+
+  private def markBeginningOfLine(originalContent: String): String = {
+   originalContent.replaceAll("(?m)^(\\S)", "\\☞$1")
+  }
+
+  private def markMovesToTheLeft(originalContent: String): String =
+  {
+    val lines = originalContent.lines.foldLeft[(Int, Seq[String])]((0, Seq())) {
+      case ((prevIndent, lines), current) =>
+        if (current.trim().isEmpty || current.trim().startsWith("--"))
+          (prevIndent, lines :+ current)
+        else {
+          val currentIndent = current.indexOf(current.trim())
+          val thisLine = if (0 < currentIndent && currentIndent < prevIndent) "❡" + current else current
+          (currentIndent, lines :+ thisLine)
+        }
+    }
+    lines._2.mkString("\n")
+  }
+}
+
 object ElmParser extends RegexParsers {
 
   val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=,/|^%:!]+".r | "-"
@@ -85,7 +113,7 @@ object ElmParser extends RegexParsers {
     })
 
   def sectionHeader =
-    positionedNode(("☞--" ~> "[A-Z\\s]+".r <~ "\n") ^^ SyntaxNode.leaf("sectionHeader"))
+    positionedNode(("☞--" ~> "[A-Z\\s]+\n".r ).map(_.trim()) ^^ SyntaxNode.leaf("sectionHeader"))
 
 
   def section =
@@ -109,7 +137,7 @@ object ElmParser extends RegexParsers {
     // TODO: these can be nested
     def delimitedComment = "\\{-[\\s\\S]*?-\\}".r
 
-    def restOfLineComment = "--" ~> restOfLine
+    def restOfLineComment = "--" ~> restOfLine.filter("^[A-Z\\s]+$".matches(_))
 
     positionedNode((delimitedComment | restOfLineComment) ^^ SyntaxNode.leaf("comment"))
   }
@@ -125,6 +153,7 @@ object ElmParser extends RegexParsers {
         positionedNode(opt(comment) ~> (
           infixFunctionApplication |
             fieldAccess |
+            functionApplication | // this must be before constructorApplication|
             elmExpressionWithClearPrecedence
           ) <~ opt(comment) ^^ {
           case expr => SyntaxNode.parent(name, Seq(expr))
@@ -132,7 +161,6 @@ object ElmParser extends RegexParsers {
 
     private def elmExpressionWithClearPrecedence: Parser[PositionedSyntaxNode] =
     // printAttempt("clear precedence:") |
-      functionApplication | // this must be before constructorApplication
         qualifiedFunctionName |
         constructorApplication |
         listLiteral |

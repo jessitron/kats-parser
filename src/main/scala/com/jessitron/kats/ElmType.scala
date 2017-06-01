@@ -7,7 +7,7 @@ import scala.util.control.NonFatal
 
 class ElmType extends TypeUnderFile {
   override def isOfType(f: FileArtifact): Boolean =
-    f.name.endsWith(".elm") && !f.path.contains("/elm-stuff/")
+    f.name.endsWith(".elm") && !f.path.contains("elm-stuff/")
 
   override def fileToRawNode(f: FileArtifact): Option[ParsedNode] = {
     println(s"Attempting to parse ${f.path}")
@@ -23,29 +23,11 @@ class ElmType extends TypeUnderFile {
   override def description: String = "elmy elminess"
 
   override def preprocess(originalContent: String): String = {
-   val result = markMovesToTheLeft(originalContent.replaceAll("(?m)^(\\S)", "\\☞$1"))
-   // println("PREPROCESS OUTPUT\n" + result)
-    result
+   ElmProcessor.addSpecials(originalContent)
   }
 
-  // strip the preprocess marks
   override def postprocess(preprocessedContent: String): String =
-    preprocessedContent.replaceAll("[☞❡]", "")
+    ElmProcessor.removeSpecials(preprocessedContent)
 
-
-  private def markMovesToTheLeft(originalContent: String): String =
-  {
-    val lines = originalContent.lines.foldLeft[(Int, Seq[String])]((0, Seq())) {
-      case ((prevIndent, lines), current) =>
-        if (current.trim().isEmpty || current.trim().startsWith("--"))
-          (prevIndent, lines :+ current)
-        else {
-          val currentIndent = current.indexOf(current.trim())
-          val thisLine = if (0 < currentIndent && currentIndent < prevIndent) "❡" + current else current
-          (currentIndent, lines :+ thisLine)
-        }
-    }
-    lines._2.mkString("\n")
-  }
 
 }

@@ -6,14 +6,14 @@ import org.scalatest.FlatSpec
 class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
 
   it should "change my source code" in {
-    val sourceProjectLocation = "/Users/jessitron/code/jessitron/elm-rugs/elm-stuff"
+    val sourceProjectLocation = "/Users/jessitron/code/jessitron/elm-rugs"
 
     val pmv = projectFromDirectory(sourceProjectLocation)
 
     val expr =
-      """//Elm()//functionDeclaration
+      """/src/BeginnerProgram.elm/Elm()//functionDeclaration
         |             [/functionName[@value="view"]]
-        |             /body/functionApplication[//calledFunction[@value="div"]]
+        |             /body/functionApplication[//functionName[@value="div"]]
         |                  /argument[2]""".stripMargin
 
     val nodes = evaluatePathExpression(pmv, expr)
