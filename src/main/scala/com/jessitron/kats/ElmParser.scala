@@ -56,7 +56,7 @@ object ElmParser extends RegexParsers {
 
 
     def moduleDeclaration: Parser[PositionedSyntaxNode] =
-      positionedNode("☞module" ~> uppercaseIdentifier("moduleName") ~ exposings ~ opt(docString) ^^ {
+      positionedNode("☞module" ~> qualifiedUppercaseIdentifier("moduleName") ~ exposings ~ opt(docString) ^^ {
         case name ~ exposings ~ doc => SyntaxNode.parent("moduleDeclaration", Seq(name, exposings) ++ doc.toSeq)
       })
 
