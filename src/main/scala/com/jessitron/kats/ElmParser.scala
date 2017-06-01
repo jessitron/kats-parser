@@ -96,7 +96,7 @@ object ElmParser extends RegexParsers {
   def comment: Parser[PositionedSyntaxNode] = {
     def restOfLine = "[^\n]*\n".r ^^ { line => line.substring(0, line.length - 1) }
 
-    def delimitedComment = "\\{-.*?-\\}".r
+    def delimitedComment = "\\{-[\\s\\S]*?-\\}".r
 
     def restOfLineComment = "--" ~> restOfLine
 
