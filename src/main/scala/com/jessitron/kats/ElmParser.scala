@@ -69,6 +69,13 @@ object ElmParser extends RegexParsers {
 
   }
 
+  def printAttempt[T](message: String): Parser[T] = new Parser[T] {
+    override def apply(in: ElmParser.Input): ElmParser.ParseResult[T] = {
+      println(s"${message} attempting to match at [${in.pos.line}, ${in.pos.column}]")
+      Failure("nah", in)
+    }
+  }
+
   import TopLevel._
   import Module._
 
@@ -87,7 +94,10 @@ object ElmParser extends RegexParsers {
 
   def qualifiedFunctionName: Parser[PositionedSyntaxNode] = positionedNode(opt(rep1sep(uppercaseIdentifier("component"), ".") <~ ".") ~ functionName ^^ {
     case None ~ p => SyntaxNode.unposition(p)
-    case Some(packages) ~ p => SyntaxNode.parent("qualifiedFunctionName", packages :+ p)
+    case Some(packages) ~ p =>
+      val result = SyntaxNode.parent("qualifiedFunctionName", packages :+ p)
+      println("This looks like a qualified function name: " + (packages :+ p).map(_.values).mkString("."))
+      result
   })
 
   def qualifiedUppercaseIdentifier(name: String): Parser[PositionedSyntaxNode] =
@@ -113,27 +123,46 @@ object ElmParser extends RegexParsers {
   object ElmExpression {
 
     def expression(name: String): Parser[PositionedSyntaxNode] =
-      positionedNode(opt(comment) ~> (
-        infixFunctionApplication |
-          expressionOtherThanInfixFunctionApplication
-        ) <~ opt(comment) ^^ {
-        case expr => SyntaxNode.parent(name, Seq(expr))
-      })
+      printAttempt(s"Looking for expression called ${name}: ") |
+        positionedNode(opt(comment) ~> (
+          infixFunctionApplication |
+            fieldAccess |
+            elmExpressionWithClearPrecedence
+          ) <~ opt(comment) ^^ {
+          case expr => SyntaxNode.parent(name, Seq(expr))
+        })
 
-    private def expressionOtherThanInfixFunctionApplication = functionApplication |
-      constructorApplication |
-      listLiteral |
-      SimpleLiteral.literal |
-      recordLiteral |
-      tupleLiteral |
-      anonymousFunction |
-      ifExpression |
-      switch |
-      letExpression |
-      expressionInParens |
-      hint("an Elm Expression")
+    private def elmExpressionWithClearPrecedence: Parser[PositionedSyntaxNode] =
+      printAttempt("clear precedence:") |
+        functionApplication |
+        constructorApplication |
+        listLiteral |
+        SimpleLiteral.literal |
+        tupleLiteral |
+        anonymousFunction |
+        recordLiteral |
+        ifExpression |
+        switch |
+        letExpression |
+        expressionInParens |
+        hint("an Elm Expression")
 
-   private def expressionInParens = "(" ~> expression("insideParens") <~ opt(moveLeft) ~ ")"
+    private def elmExpressionThatMightResultInARecord: Parser[PositionedSyntaxNode] =
+      printAttempt("might be a record:") |
+        functionApplication |
+        recordLiteral |
+        ifExpression |
+        switch |
+        letExpression |
+        expressionInParens
+
+    private def fieldAccess =
+      printAttempt("field access:") |
+        positionedNode(wrap("record", elmExpressionThatMightResultInARecord) ~ "dot" ~ lowercaseIdentifier("fieldName") ^^ {
+          case record ~ _ ~ field => SyntaxNode.parent("recordFieldAccess", Seq(record, field))
+        }, Some("fieldAccess"))
+
+    private def expressionInParens = "(" ~> expression("insideParens") <~ opt(moveLeft) ~ ")"
 
     private def functionApplication: Parser[PositionedSyntaxNode] =
       positionedNode((qualifiedFunctionName) ~ rep(expression("argument")) ^^ {
@@ -147,7 +176,7 @@ object ElmParser extends RegexParsers {
     private def infixFunction = positionedNode(infixFunctionRegex ^^ SyntaxNode.leaf("infixFunction"))
 
     private def infixFunctionApplication =
-      positionedNode(wrap("argument", expressionOtherThanInfixFunctionApplication) ~ infixFunction ~ expression("argument") ^^ {
+      positionedNode(wrap("argument", elmExpressionWithClearPrecedence) ~ infixFunction ~ expression("argument") ^^ {
         case left ~ fn ~ right => SyntaxNode.parent("functionApplication", Seq(left, fn, right))
       })
 
@@ -160,12 +189,12 @@ object ElmParser extends RegexParsers {
 
     private def listLiteral: Parser[PositionedSyntaxNode] =
       positionedNode("[" ~> repsep(expression("listItem"), commaSeparator) <~ opt(moveLeft) ~ "]" ^^ {
-      items => SyntaxNode.parent("listLiteral", items)
-    })
+        items => SyntaxNode.parent("listLiteral", items)
+      })
 
     object SimpleLiteral {
 
-      def literal: Parser[PositionedSyntaxNode] = intLiteral | charLiteral | stringLiteral | unit
+      def literal: Parser[PositionedSyntaxNode] = intLiteral | charLiteral | stringLiteral | floatLiteral | unit
 
       private def intLiteral: Parser[PositionedSyntaxNode] =
         positionedNode("[0-9]+".r ^^ SyntaxNode.leaf("intLiteral"))
@@ -181,13 +210,14 @@ object ElmParser extends RegexParsers {
 
 
     }
+
     private def unit = positionedNode("()" ^^ SyntaxNode.leaf("unit"))
 
 
     private def recordLiteralField: Parser[PositionedSyntaxNode] =
       positionedNode(lowercaseIdentifier("fieldName") ~ "=" ~ expression("fieldValue") ^^ {
-      case name ~ _ ~ typ => SyntaxNode.parent("recordLiteralField", Seq(name, typ))
-    })
+        case name ~ _ ~ typ => SyntaxNode.parent("recordLiteralField", Seq(name, typ))
+      })
 
     def recordLiteral: Parser[PositionedSyntaxNode] =
       positionedNode("{" ~> repsep(recordLiteralField, commaSeparator) <~ opt("moveLeft") ~ "}" ^^ { fields => SyntaxNode.parent("recordLiteral", fields) })
@@ -395,13 +425,16 @@ object ElmParser extends RegexParsers {
     }
   }
 
-  def positionedNode(inner: Parser[SyntaxNode]) = new Parser[PositionedSyntaxNode] {
+  def positionedNode(inner: Parser[SyntaxNode], label: Option[String] = None) = new Parser[PositionedSyntaxNode] {
     override def apply(in: Input): ParseResult[PositionedSyntaxNode] = {
       val start = handleWhiteSpace(in.source, in.offset)
       inner.apply(in) match {
         case Error(msg, next) => Error(msg, next)
-        case Failure(msg, next) => Failure(msg, next)
+        case Failure(msg, next) =>
+          label.foreach(l => println(s"Failed to match on ${label} at [${in.pos.line},${in.pos.column}]"))
+          Failure(msg, next)
         case Success(result, next) =>
+          println(s"Positioning match of ${result.name} at [${in.pos.line},${in.pos.column}]-[${next.pos.line},${next.pos.column}]")
           val end = next.offset
           Success(PositionedSyntaxNode(result.name, result.childNodes, result.valueOption,
             start, end), next)
