@@ -169,7 +169,11 @@ object ElmParser extends RegexParsers {
         case pattern ~ _ ~ result => SyntaxNode.parent("clause", Seq(pattern, result))
       })
 
-    private def letExpression = positionedNode("let" ~> rep1(functionDeclaration("")) ~ "in" ~ expression("body") ^^ {
+    private def decomposition = positionedNode(matchable ~ "=" ~ expression("body") ^^ {
+      case matchable ~ _ ~ body => SyntaxNode.parent("decomposingDeclaration", Seq(matchable, body))
+    })
+
+    private def letExpression = positionedNode("let" ~> rep1(functionDeclaration("") | decomposition) ~ "in" ~ expression("body") ^^ {
       case declarations ~ _ ~ body => SyntaxNode.parent("let", declarations :+ body)
     })
   }
