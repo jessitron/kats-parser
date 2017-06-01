@@ -89,6 +89,7 @@ object ElmParser extends RegexParsers {
       })
 
     private def expressionOtherThanInfixFunctionApplication = functionApplication |
+      constructorApplication |
       listLiteral |
       stringLiteral |
       intLiteral |
@@ -111,7 +112,11 @@ object ElmParser extends RegexParsers {
         case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
       })
 
-    private def infixFunction = positionedNode("[\\+\\-\\*<>&]+[=]?".r ^^ SyntaxNode.leaf("calledFunction"))
+    private def constructorApplication = positionedNode((qualifiedUppercaseIdentifier("calledConstructor") ~ rep(expression("argument"))) ^^ {
+      case fn ~ args => SyntaxNode.parent("constructorApplication", fn +: args)
+    })
+
+    private def infixFunction = positionedNode("[\\+\\-\\*<>&=]+".r ^^ SyntaxNode.leaf("calledFunction"))
 
     private def infixFunctionApplication =
       positionedNode(wrap("argument", expressionOtherThanInfixFunctionApplication) ~ infixFunction ~ expression("argument") ^^ {
