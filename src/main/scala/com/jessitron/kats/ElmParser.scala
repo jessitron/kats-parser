@@ -62,7 +62,7 @@ object ElmParser extends RegexParsers {
   def sectionHeader =
     positionedNode(("☞--" ~> freeText) ^^ SyntaxNode.leaf("sectionHeader"))
 
-  
+
   def section =
     positionedNode(sectionHeader ~ rep(topLevel) ^^ { case (header ~ fns) => SyntaxNode.parent("section", header +: fns) })
 
@@ -89,9 +89,11 @@ object ElmParser extends RegexParsers {
 
     private def expressionInParens = "(" ~> expression("insideParens") <~ ")"
 
-    private def weirdBuildInFunction: Parser[PositionedSyntaxNode] = positionedNode("(,)" ^^ SyntaxNode.leaf("calledFunction"))
+    private def weirdBuiltInFunction: Parser[PositionedSyntaxNode] =
+      positionedNode("(,)" ^^ SyntaxNode.leaf("calledFunction"))
 
-    private def functionApplication: Parser[PositionedSyntaxNode] = positionedNode((qualifiedLowercaseIdentifier("calledFunction") | weirdBuildInFunction) ~ rep(expression("argument")) ^^ {
+    private def functionApplication: Parser[PositionedSyntaxNode] =
+      positionedNode((qualifiedLowercaseIdentifier("calledFunction") | weirdBuiltInFunction) ~ rep(expression("argument")) ^^ {
       case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
     })
 
