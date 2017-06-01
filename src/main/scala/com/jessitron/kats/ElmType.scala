@@ -36,7 +36,7 @@ class ElmType extends TypeUnderFile {
   {
     val lines = originalContent.lines.foldLeft[(Int, Seq[String])]((0, Seq())) {
       case ((prevIndent, lines), current) =>
-        if (current.trim().isEmpty)
+        if (current.trim().isEmpty || current.trim().startsWith("--"))
           (prevIndent, lines :+ current)
         else {
           val currentIndent = current.indexOf(current.trim())
