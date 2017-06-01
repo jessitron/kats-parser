@@ -13,7 +13,7 @@ class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
     val expr =
       """/src/BeginnerProgram.elm/Elm()//functionDeclaration
         |             [/functionName[@value="view"]]
-        |             /body/functionApplication[//functionName[@value="div"]]
+        |             /body/functionApplication[//function[@value="Html.div"]]
         |                  /argument[2]""".stripMargin
 
     val nodes = evaluatePathExpression(pmv, expr)

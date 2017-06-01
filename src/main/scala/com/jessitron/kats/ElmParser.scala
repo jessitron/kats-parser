@@ -174,6 +174,16 @@ object ElmParser extends RegexParsers {
         expressionInParens |
         hint("an Elm Expression")
 
+    private def elmExpressionThatIsClearEnoughToBeAnArgument =
+       fieldAccess |
+         qualifiedFunctionName |
+         listLiteral |
+         SimpleLiteral.literal |
+         tupleLiteral |
+         anonymousFunction |
+         recordLiteral |
+         expressionInParens
+
     private def elmExpressionThatMightResultInARecord: Parser[PositionedSyntaxNode] =
     // printAttempt("might be a record:") |
       qualifiedFunctionName |
@@ -193,7 +203,9 @@ object ElmParser extends RegexParsers {
     private def expressionInParens = "(" ~> expression("insideParens") <~ opt(moveLeft) ~ ")"
 
     private def functionApplication: Parser[PositionedSyntaxNode] =
-      positionedNode(wrap("function", elmExpressionWithClearPrecedence) ~ rep(expression("argument")) ^^ {
+      positionedNode(
+        wrap("function", elmExpressionWithClearPrecedence) ~
+          rep(wrap("argument",elmExpressionThatIsClearEnoughToBeAnArgument)) ^^ {
         case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
       })
 
