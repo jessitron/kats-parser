@@ -109,6 +109,7 @@ object ElmParser extends RegexParsers {
       listLiteral |
       stringLiteral |
       intLiteral |
+      charLiteral |
       recordLiteral |
       tupleLiteral |
       switch |
@@ -117,6 +118,8 @@ object ElmParser extends RegexParsers {
       hint("an Elm Expression")
 
     private def intLiteral = positionedNode("[0-9]+".r ^^ SyntaxNode.leaf("intLiteral"))
+
+    private def charLiteral = positionedNode("'.'".r ^^ SyntaxNode.leaf("charLiteral"))
 
     private def expressionInParens = "(" ~> expression("insideParens") <~ ")"
 
