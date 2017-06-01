@@ -61,8 +61,8 @@ object ElmParser extends RegexParsers {
       })
 
     def importStatement: Parser[PositionedSyntaxNode] =
-      positionedNode("☞import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ^^ {
-        case name ~ exposings => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq)
+      positionedNode("☞import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ~ opt("as" ~> uppercaseIdentifier("alias")) ^^ {
+        case name ~ exposings ~ alias => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq ++ alias.toSeq)
       })
 
   }
@@ -218,7 +218,8 @@ object ElmParser extends RegexParsers {
         typeAliasDeclaration |
         unionTypeDeclaration |
         infixPrecedenceDeclaration |
-        ("☞" ~> comment)
+        ("☞" ~> comment) |
+        hint("top level declaration")
 
     def functionDeclaration(lineBegin: Parser[String] = "☞"): Parser[PositionedSyntaxNode] =
       positionedNode(opt(docString) ~ opt(functionTypeDeclaration(lineBegin)) ~ lineBegin ~ functionName ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
