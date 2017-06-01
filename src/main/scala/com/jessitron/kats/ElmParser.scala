@@ -12,7 +12,7 @@ object ElmParser extends RegexParsers {
 
   protected def identifier = new Parser[String] {
     val underlying = "[a-z][A-Za-z0-9_]*".r
-    val reservedWords = Seq("type", "case", "of")
+    val reservedWords = Seq("type", "case", "of", "let", "in")
 
     def apply(in: Input): ParseResult[String] = {
       val pr = underlying.apply(in)
@@ -67,7 +67,7 @@ object ElmParser extends RegexParsers {
     positionedNode(sectionHeader ~ rep(topLevel) ^^ { case (header ~ fns) => SyntaxNode.parent("section", header +: fns) })
 
 
-  def topLevel = functionDeclaration | typeAliasDeclaration | unionTypeDeclaration
+  def topLevel = functionDeclaration() | typeAliasDeclaration | unionTypeDeclaration
 
   def qualifiedLowercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode(opt(rep1sep(uppercaseIdentifier("component"), ".") <~ ".") ~ lowercaseIdentifier(name) ^^ {
     case None ~ p => SyntaxNode.parent(name, Seq(p))
@@ -82,9 +82,9 @@ object ElmParser extends RegexParsers {
 
     def expression(name: String): Parser[PositionedSyntaxNode] =
       positionedNode((
-          infixFunctionApplication |
+        infixFunctionApplication |
           expressionOtherThanInfixFunctionApplication
-         ) ^^ {
+        ) ^^ {
         case expr => SyntaxNode.parent(name, Seq(expr))
       })
 
@@ -95,6 +95,7 @@ object ElmParser extends RegexParsers {
       recordLiteral |
       tupleLiteral |
       switch |
+      letExpression |
       expressionInParens |
       hint("an Elm Expression")
 
@@ -146,6 +147,10 @@ object ElmParser extends RegexParsers {
       positionedNode(matchable ~ "->" ~ expression("result") ^^ {
         case pattern ~ _ ~ result => SyntaxNode.parent("clause", Seq(pattern, result))
       })
+
+    private def letExpression = positionedNode("let" ~> rep1(functionDeclaration("")) ~ "in" ~ expression("body") ^^ {
+      case declarations ~ _ ~ body => SyntaxNode.parent("let", declarations :+ body)
+    })
   }
 
   import ElmExpression.expression
@@ -155,14 +160,14 @@ object ElmParser extends RegexParsers {
     import ElmTypes._
     import ElmDecomposition._
 
-    def functionDeclaration: Parser[PositionedSyntaxNode] =
-      positionedNode(opt(docString) ~ opt(functionTypeDeclaration) ~ "☞" ~ lowercaseIdentifier("functionName") ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
+    def functionDeclaration(lineBegin: Parser[String] = "☞"): Parser[PositionedSyntaxNode] =
+      positionedNode(opt(docString) ~ opt(functionTypeDeclaration(lineBegin)) ~ lineBegin ~ lowercaseIdentifier("functionName") ~ rep(matchable) ~ "=" ~ expression("body") ^^ {
         case docStringOption ~ typeOption ~ _ ~ name ~ params ~ "=" ~ body =>
           SyntaxNode.parent("functionDeclaration",
             docStringOption.toSeq ++ typeOption.toSeq ++ (name +: params :+ body))
       })
 
-    private def functionTypeDeclaration: Parser[PositionedSyntaxNode] = positionedNode("☞" ~> lowercaseIdentifier("functionName") ~ ":" ~ elmType("declaredType") ^^ {
+    private def functionTypeDeclaration(lineBegin: Parser[String]): Parser[PositionedSyntaxNode] = positionedNode(lineBegin ~> lowercaseIdentifier("functionName") ~ ":" ~ elmType("declaredType") ^^ {
       case name ~ ":" ~ typ => SyntaxNode.parent("typeDeclaration", Seq(name, typ))
     })
 
