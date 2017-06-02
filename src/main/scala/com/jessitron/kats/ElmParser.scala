@@ -6,18 +6,17 @@ import scala.util.parsing.combinator.RegexParsers
 
 object ElmProcessor {
 
-  def addSpecials(originalContent:String): String =
-     markMovesToTheLeft(markBeginningOfLine(originalContent))
+  def addSpecials(originalContent: String): String =
+    markMovesToTheLeft(markBeginningOfLine(originalContent))
 
   def removeSpecials(preprocessedContent: String): String =
     preprocessedContent.replaceAll("[☞❡]", "")
 
   private def markBeginningOfLine(originalContent: String): String = {
-   originalContent.replaceAll("(?m)^(\\S)", "\\☞$1")
+    originalContent.replaceAll("(?m)^(\\S)", "\\☞$1")
   }
 
-  private def markMovesToTheLeft(originalContent: String): String =
-  {
+  private def markMovesToTheLeft(originalContent: String): String = {
     val lines = originalContent.lines.foldLeft[(Int, Seq[String])]((0, Seq())) {
       case ((prevIndent, lines), current) =>
         if (current.trim().isEmpty || current.trim().startsWith("--"))
@@ -92,7 +91,7 @@ object ElmParser extends RegexParsers {
 
     def importStatement: Parser[PositionedSyntaxNode] =
       positionedNode("☞import" ~> qualifiedUppercaseIdentifier("importName") ~ opt(exposings) ~ opt("as" ~> uppercaseIdentifier("alias")) ^^ {
-        case name ~ exposings ~ alias => SyntaxNode.parent("importStatement", Seq(name) ++ exposings.toSeq ++ alias.toSeq)
+        case name ~ exposings ~ alias => SyntaxNode.parent("import", Seq(name) ++ exposings.toSeq ++ alias.toSeq)
       })
 
   }
@@ -108,12 +107,17 @@ object ElmParser extends RegexParsers {
   import Module._
 
   def elmModule: Parser[PositionedSyntaxNode] =
-    positionedNode(moduleDeclaration ~ rep(importStatement) ~ rep(topLevel) ~ rep(section) ^^ {
-      case name ~ imports ~ fns ~ sections => SyntaxNode.parent("elmModule", Seq(name) ++ imports ++ fns ++ sections)
+    positionedNode(moduleDeclaration ~ rep(importStatement) ~ moduleBody ^^ {
+      case name ~ imports ~ body => SyntaxNode.parent("elmModule", Seq(name) ++ imports ++ Seq(body))
+    })
+
+  private def moduleBody: Parser[PositionedSyntaxNode] =
+    positionedNode(rep(topLevel) ~ rep(section) ^^ {
+      case preSectionDeclarations ~ sections => SyntaxNode.parent("moduleBody", preSectionDeclarations ++ sections)
     })
 
   def sectionHeader =
-    positionedNode(("☞--" ~> "[A-Z\\s]+\n".r ).map(_.trim()) ^^ SyntaxNode.leaf("sectionHeader"))
+    "☞--" ~> positionedNode(("[A-Z\\s]+?\n".r) ^^ SyntaxNode.leaf("sectionHeader")).map(_.chomp)
 
 
   def section =
@@ -149,19 +153,19 @@ object ElmParser extends RegexParsers {
   object ElmExpression {
 
     def expression(name: String): Parser[PositionedSyntaxNode] =
-     // printAttempt(s"Looking for expression called ${name}: ") |
-        positionedNode(opt(comment) ~> (
-          infixFunctionApplication |
-            fieldAccess |
-            functionApplication | // this must be before constructorApplication|
-            elmExpressionWithClearPrecedence
-          ) <~ opt(comment) ^^ {
-          case expr => SyntaxNode.parent(name, Seq(expr))
-        })
+    // printAttempt(s"Looking for expression called ${name}: ") |
+      positionedNode(opt(comment) ~> (
+        infixFunctionApplication |
+          fieldAccess |
+          functionApplication | // this must be before constructorApplication|
+          elmExpressionWithClearPrecedence
+        ) <~ opt(comment) ^^ {
+        case expr => SyntaxNode.parent(name, Seq(expr))
+      })
 
     private def elmExpressionWithClearPrecedence: Parser[PositionedSyntaxNode] =
     // printAttempt("clear precedence:") |
-        qualifiedFunctionName |
+      qualifiedFunctionName |
         constructorApplication |
         listLiteral |
         SimpleLiteral.literal |
@@ -175,19 +179,19 @@ object ElmParser extends RegexParsers {
         hint("an Elm Expression")
 
     private def elmExpressionThatIsClearEnoughToBeAnArgument =
-       fieldAccess |
-         qualifiedFunctionName |
-         listLiteral |
-         SimpleLiteral.literal |
-         tupleLiteral |
-         anonymousFunction |
-         recordLiteral |
-         expressionInParens
+      fieldAccess |
+        qualifiedFunctionName |
+        listLiteral |
+        SimpleLiteral.literal |
+        tupleLiteral |
+        anonymousFunction |
+        recordLiteral |
+        expressionInParens
 
     private def elmExpressionThatMightResultInARecord: Parser[PositionedSyntaxNode] =
     // printAttempt("might be a record:") |
       qualifiedFunctionName |
-      functionApplication |
+        functionApplication |
         recordLiteral |
         ifExpression |
         switch |
@@ -205,9 +209,9 @@ object ElmParser extends RegexParsers {
     private def functionApplication: Parser[PositionedSyntaxNode] =
       positionedNode(
         wrap("function", elmExpressionWithClearPrecedence) ~
-          rep(wrap("argument",elmExpressionThatIsClearEnoughToBeAnArgument)) ^^ {
-        case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
-      })
+          rep(wrap("argument", elmExpressionThatIsClearEnoughToBeAnArgument)) ^^ {
+          case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
+        })
 
     private def constructorApplication = positionedNode((qualifiedUppercaseIdentifier("calledConstructor") ~ rep(expression("argument"))) ^^ {
       case fn ~ args => SyntaxNode.parent("constructorApplication", fn +: args)
@@ -407,9 +411,11 @@ object ElmParser extends RegexParsers {
 
   object ElmTypes {
 
-    def elmType(name: String): Parser[PositionedSyntaxNode] = positionedNode((functionType | elmTypeExceptFunction) <~ opt(comment) ^^ {
-      typ => SyntaxNode.parent(name, Seq(typ))
-    })
+    def elmType(name: String): Parser[PositionedSyntaxNode] =
+      positionedNode((functionType | elmTypeExceptFunction) <~ opt(comment) ^^ {
+        typ =>
+          SyntaxNode.parent(name, Seq(typ))
+      })
 
     def elmTypeExceptFunction: Parser[PositionedSyntaxNode] =
       typeReference |
@@ -432,7 +438,8 @@ object ElmParser extends RegexParsers {
 
     private def typeReference: Parser[PositionedSyntaxNode] =
       positionedNode(qualifiedUppercaseIdentifier("typeName") ~ rep(elmType("typeParameter")) ^^ {
-        case typeName ~ parameters => SyntaxNode.parent("typeReference", typeName +: parameters)
+        case typeName ~ parameters =>
+          SyntaxNode.parent("typeReference", typeName +: parameters)
       })
 
     private def variableTypeReference = lowercaseIdentifier("typeVariable")
@@ -471,10 +478,10 @@ object ElmParser extends RegexParsers {
       inner.apply(in) match {
         case Error(msg, next) => Error(msg, next)
         case Failure(msg, next) =>
-          //label.foreach(l => println(s"Failed to match on ${label} at [${in.pos.line},${in.pos.column}]"))
+          // label.foreach(l => println(s"Failed to match on ${label} at [${in.pos.line},${in.pos.column}]"))
           Failure(msg, next)
         case Success(result, next) =>
-          // println(s"Positioning match of ${result.name} at [${in.pos.line},${in.pos.column}]-[${next.pos.line},${next.pos.column}]")
+          //  println(s"Positioning match of ${result.name} at [${in.pos.line},${in.pos.column}]-[${next.pos.line},${next.pos.column}]")
           val end = next.offset
           Success(PositionedSyntaxNode(result.name, result.childNodes, result.valueOption,
             start, end), next)
@@ -501,7 +508,7 @@ object SyntaxNode {
     SyntaxNode(name, children, None)
 
   def unposition(positionedSyntaxNode: PositionedSyntaxNode): SyntaxNode = {
-    SyntaxNode(positionedSyntaxNode.nodeName, Seq(), positionedSyntaxNode.valueOption)
+    SyntaxNode(positionedSyntaxNode.nodeName, positionedSyntaxNode.parsedNodes, positionedSyntaxNode.valueOption)
   }
 }
 
@@ -511,4 +518,15 @@ case class PositionedSyntaxNode(override val nodeName: String,
                                 override val startOffset: Int,
                                 override val endOffset: Int) extends ParsedNode {
   def values: String = valueOption.getOrElse(parsedNodes.map(_.values).mkString(" "))
+
+  def chomp: PositionedSyntaxNode =
+    valueOption match {
+      case Some(stringWithNewline) if stringWithNewline.endsWith("\n") =>
+        PositionedSyntaxNode(nodeName,
+          parsedNodes,
+          Some(stringWithNewline.substring(0, stringWithNewline.length - 1)),
+          startOffset,
+          endOffset - 1)
+      case _ => this
+    }
 }
