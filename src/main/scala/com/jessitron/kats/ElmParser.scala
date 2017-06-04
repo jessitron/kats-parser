@@ -33,7 +33,9 @@ object ElmProcessor {
 
 object ElmParser extends RegexParsers {
 
-  val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=,/|^%:!]+".r | "-"
+  val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=/|^%:!]+".r | "-"
+
+  val weirdFunctionName: Parser[String] = "(,)" // treating this with other infixes makes record parsing harder
 
   def uppercaseIdentifier(name: String): Parser[PositionedSyntaxNode] = positionedNode("[A-Z][A-Za-z0-9_]*".r ^^ SyntaxNode.leaf(name))
 
@@ -61,7 +63,7 @@ object ElmParser extends RegexParsers {
   def functionName: Parser[PositionedSyntaxNode] = {
     def infixFunctionTechnicalName: Parser[String] = "(" ~ infixFunctionRegex ~ ")" ^^ { case a ~ b ~ c => a + b + c }
 
-    positionedNode((identifier | infixFunctionTechnicalName) ^^ SyntaxNode.leaf("functionName"))
+    positionedNode((identifier | infixFunctionTechnicalName | weirdFunctionName) ^^ SyntaxNode.leaf("functionName"))
   }
 
   def docString: Parser[PositionedSyntaxNode] = positionedNode(("☞{-|" ~> "[\\s\\S]*?\\-\\}".r) ^^ SyntaxNode.leaf("docstring"))
@@ -209,7 +211,7 @@ object ElmParser extends RegexParsers {
     private def functionApplication: Parser[PositionedSyntaxNode] =
       positionedNode(
         wrap("function", elmExpressionWithClearPrecedence) ~
-          rep(wrap("argument", elmExpressionThatIsClearEnoughToBeAnArgument)) ^^ {
+          rep1(wrap("argument", elmExpressionThatIsClearEnoughToBeAnArgument)) ^^ {
           case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
         })
 
@@ -450,7 +452,7 @@ object ElmParser extends RegexParsers {
       })
 
     private def recordTypeFieldDeclaration: Parser[PositionedSyntaxNode] =
-      positionedNode(lowercaseIdentifier("fieldNameDeclaration") ~ ":" ~ elmType("fieldTypeDeclaration") ^^ {
+      positionedNode(lowercaseIdentifier("fieldName") ~ ":" ~ elmType("fieldType") ^^ {
         case name ~ _ ~ typ => SyntaxNode.parent("recordTypeField", Seq(name, typ))
       })
 

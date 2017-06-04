@@ -10,13 +10,15 @@ class ElmType extends TypeUnderFile {
     f.name.endsWith(".elm") && !f.path.contains("elm-stuff/")
 
   override def fileToRawNode(f: FileArtifact): Option[ParsedNode] = {
-    println(s"Attempting to parse ${f.path}")
+    //println(s"Attempting to parse ${f.path}")
     try {
       val result = ElmParser.parse(f.content)
-      println(s"~~~~~~ Successfully parsed ${f.path}")
+      //println(s"~~~~~~ Successfully parsed ${f.path}")
       Some(result)
     } catch {
-      case NonFatal(x) => throw new RuntimeException(s"Failure parsing file: ${f.path}", x)
+      case NonFatal(x) =>
+        println("contents that didn't parse: -----\n" + f.content + "\n-------")
+        throw new RuntimeException(s"Failure parsing file: ${f.path}", x)
     }
   }
 
