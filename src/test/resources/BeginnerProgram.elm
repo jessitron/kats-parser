@@ -21,6 +21,7 @@ init =
 
 type Msg
     = NoOp
+    | Yes String
 
 
 
@@ -39,6 +40,8 @@ view model =
 update : Msg -> Model -> Model
 update msg model =
     case msg of
+        Yes string ->
+            { model | messages = [string] }
         NoOp ->
             model
 

@@ -265,8 +265,16 @@ object ElmParser extends RegexParsers {
         case name ~ _ ~ typ => SyntaxNode.parent("recordLiteralField", Seq(name, typ))
       })
 
+    private def startingRecord = lowercaseIdentifier("startingRecord") <~ "|"
+
     def recordLiteral: Parser[PositionedSyntaxNode] =
-      positionedNode("{" ~> repsep(recordLiteralField, commaSeparator) <~ opt("moveLeft") ~ "}" ^^ { fields => SyntaxNode.parent("recordLiteral", fields) })
+      positionedNode("{" ~> opt(startingRecord) ~
+        repsep(recordLiteralField, commaSeparator)
+        <~ opt("moveLeft") ~ "}" ^^ {
+        case Some(startingRecord) ~ fields =>
+          SyntaxNode.parent("recordLiteral", startingRecord +: fields)
+        case None ~ fields => SyntaxNode.parent("recordLiteral", fields)
+      })
 
     private def tupleLiteral: Parser[PositionedSyntaxNode] =
       positionedNode("(" ~> rep1sep(expression("tuplePart"), commaSeparator) <~ opt("moveLeft") ~ ")" ^^ { parts =>
