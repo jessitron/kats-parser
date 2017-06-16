@@ -21,7 +21,7 @@ class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
       val initialFieldValues = evaluatePathExpression(pmv, expr)
 
       val top = evaluatePathExpression(pmv, """/BeginnerProgram.elm/Elm()//functionDeclaration[/functionName[@value="init"]]""")
-      println(TreeNodePrinter.drawUpdatable(top.head))
+      println(MyTreeNodePrinting.drawUpdatable(top.head))
 
       assert(initialFieldValues.length === 2)
     }
