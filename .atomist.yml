@@ -59,3 +59,21 @@ editor:
     - "package": "com.jessitron.kats"
     - "type_name": "Elm"
 
+---
+kind: "operation"
+client: "com.atomist:rug"
+version: "1.0.1-JESS"
+editor:
+  name: "ConvertExistingProjectToRugArchive"
+  group: "atomist"
+  artifact: "rug-rugs"
+  version: "0.32.0-20170606145959"
+  origin:
+    repo: "git@github.com:jessitron/kats-parser.git"
+    branch: "master"
+    sha: "5bafe4a"
+  parameters:
+    - "archiveName": "parser"
+    - "groupId": "jessitron"
+    - "version": "0.1.0"
+

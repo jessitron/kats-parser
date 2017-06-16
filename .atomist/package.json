@@ -1,0 +1,47 @@
+{
+  "license": "Apache-2.0",
+  "keywords": [
+    "atomist",
+    "rug"
+  ],
+  "dependencies": {
+    "@atomist/rugs": "^1.0.0-m.5"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.40",
+    "@types/power-assert": "^1.4.29",
+    "espower-typescript": "^8.0.0",
+    "mocha": "^3.2.0",
+    "power-assert": "^1.4.2",
+    "supervisor": "^0.12.0",
+    "tslint": "^5.0.0",
+    "typescript": "2.3.2"
+  },
+  "directories": {
+    "test": "mocha"
+  },
+  "scripts": {
+    "autotest": "supervisor -q -n exit -e ts -x npm -- run mocha",
+    "lint": "tslint '**/*.ts' --exclude 'node_modules/**' -t verbose",
+    "mocha": "mocha --compilers ts:espower-typescript/guess 'mocha/**/*.ts'",
+    "test": "npm run mocha && rug test"
+  },
+  "atomist": {
+    "requires": "[1.0.0-m.4,2.0.0)",
+    "extensions": {
+      "com.atomist.rug:rug-function-http": "[0.7.3,1.0.0)"
+    }
+  },
+  "name": "@jessitron/parser",
+  "version": "0.1.0",
+  "author": "jessitron",
+  "description": "Atomist Rugs from jessitron/parser",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jessitron/parser.git"
+  },
+  "homepage": "https://github.com/jessitron/parser#readme",
+  "bugs": {
+    "url": "https://github.com/jessitron/parser/issues"
+  }
+}
