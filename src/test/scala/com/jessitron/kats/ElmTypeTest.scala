@@ -46,13 +46,13 @@ class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
     { val expr =
       """/BeginnerProgram.elm/Elm()//functionDeclaration
         |                          [@functionName='update']/body//caseExpression
-        |                              [/pivot[@value='msg']]/clause""".stripMargin
+        |                              [/pivot[@value='msg']]""".stripMargin
 
       val v = evaluatePathExpression(pmv, expr)
 
       println(expr + "\n" + MyTreeNodePrinting.drawUpdatable(v.head))
 
-      assert(v.length === 2)
+      assert(v.length === 1)
     }
 
   }
