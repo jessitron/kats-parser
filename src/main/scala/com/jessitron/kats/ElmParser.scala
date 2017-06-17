@@ -374,7 +374,7 @@ object ElmParser extends RegexParsers {
   }
 
   object ElmDecomposition {
-    def matchable: Parser[PositionedSyntaxNode] = constructorWithArgs | consPattern | matchableWithClearPrecedence
+    def matchable: Parser[PositionedSyntaxNode] = deconstructorPattern | consPattern | matchableWithClearPrecedence
 
     private def matchableWithClearPrecedence =
       lowercaseIdentifier("identifier") |
@@ -400,8 +400,8 @@ object ElmParser extends RegexParsers {
       case left ~ _ ~ right => SyntaxNode.parent("consPattern", Seq(left, right))
     })
 
-    private def constructorWithArgs = positionedNode(qualifiedUppercaseIdentifier("constructor") ~ rep1(matchableWithClearPrecedence) ^^ {
-      case name ~ patterns => SyntaxNode.parent("constructorPattern", name +: patterns)
+    private def deconstructorPattern = positionedNode(qualifiedUppercaseIdentifier("constructorName") ~ rep1(matchableWithClearPrecedence) ^^ {
+      case name ~ patterns => SyntaxNode.parent("deconstructorPattern", name +: patterns)
     })
 
     private def matcherInParens = "(" ~> matchable <~ opt("moveLeft") ~ ")"
