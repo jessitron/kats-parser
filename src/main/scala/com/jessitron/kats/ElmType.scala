@@ -6,10 +6,12 @@ import com.atomist.source.FileArtifact
 import scala.util.control.NonFatal
 
 class ElmType extends TypeUnderFile {
+
   override def isOfType(f: FileArtifact): Boolean =
     f.name.endsWith(".elm") && !f.path.contains("elm-stuff/")
 
   override def fileToRawNode(f: FileArtifact): Option[ParsedNode] = {
+    println(s"Parsing ${f.path} with Elm Parser version ${ElmParser.VERSION}")
     //println(s"Attempting to parse ${f.path}")
     try {
       val result = ElmParser.parse(f.content)
