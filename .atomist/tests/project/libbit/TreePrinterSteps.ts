@@ -3,13 +3,13 @@ import {
     Given, ProjectScenarioWorld, Then, When,
 } from "@atomist/rug/test/project/Core";
 
-const sourceFiles = [ "src/main/scala/com/jessitron/kats/TreePrinter.scala" ];
-const testFiles = [ "src/test/scala/com/jessitron/kats/TreePrinterTest.scala" ];
+const sourceFiles = [ "src/main/scala/i/love/libbits/TreePrinter.scala" ];
+const testFiles = [ "src/test/scala/i/love/libbits/TreePrinterTest.scala" ];
 
 When("the TreePrinterLibbit is run", (p: Project, world) => {
     const w = world as ProjectScenarioWorld;
     const editor = w.editor("TreePrinterLibbit");
-    w.editWith(editor);
+    w.editWith(editor, { destinationPackage: "i.love.libbits"});
 });
 
 Then("the new TreePrinter source file exists", (p: Project, world) => {

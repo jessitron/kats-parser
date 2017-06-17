@@ -33,7 +33,7 @@
     }
   },
   "name": "@jessitron/parser",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "author": "jessitron",
   "description": "Atomist Rugs from jessitron/parser",
   "repository": {
