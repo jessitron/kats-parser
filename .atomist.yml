@@ -94,3 +94,35 @@ editor:
     - "name": "TreePrinter"
     - "sourceFile": "src/main/scala/com/jessitron/kats/TreePrinter.scala"
 
+---
+kind: "operation"
+client: "com.atomist:rug"
+version: "1.0.1-JESS"
+editor:
+  name: "AddLocalEditor"
+  group: "atomist"
+  artifact: "rug-rugs"
+  version: "0.32.0-20170606145959"
+  origin:
+    repo: "git@github.com:jessitron/kats-parser.git"
+    branch: "master"
+    sha: "978102a"
+  parameters:
+    - "description": "an editor for modifying this project"
+    - "groupId": "local"
+    - "editorName": "BumpVersion"
+
+---
+kind: "operation"
+client: "com.atomist:rug"
+version: "1.0.1-JESS"
+editor:
+  name: "IncrementVersionLibbit"
+  group: "atomist"
+  artifact: "rug-rugs"
+  version: "0.32.0"
+  origin:
+    repo: "git@github.com:atomist/rug-rugs"
+    branch: "master"
+    sha: "ce0b4a4*"
+
