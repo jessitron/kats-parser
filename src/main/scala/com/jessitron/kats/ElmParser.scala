@@ -33,7 +33,7 @@ object ElmProcessor {
 
 object ElmParser extends RegexParsers {
 
-  val VERSION = "0.2.1"
+  val VERSION = "0.2.2"
 
   val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=/|^%:!]+".r | "-"
 

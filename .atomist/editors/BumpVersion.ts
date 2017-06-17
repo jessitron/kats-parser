@@ -25,11 +25,11 @@ export class BumpVersion implements EditProject {
 
         // there are more rigorous ways to update the pom ... where's the editor for this?
         const pom = project.findFile("pom.xml");
-        const currentVersion = pom.content.match(/version>(.*)<\/version>/)[1];
+        const currentVersion = pom.content.match(/<version>(.*)<\/version>/)[1];
         const newVersion = incrementVersion(currentVersion, this.component as any);
 
-        pom.setContent(pom.content.replace(/version>(.*)<\/version>/,
-            `version>${newVersion}</version`)); // only the first one
+        pom.setContent(pom.content.replace(/<version>(.*)<\/version>/,
+            `<version>${newVersion}</version>`)); // only the first one
 
 
         // Now the custom bit

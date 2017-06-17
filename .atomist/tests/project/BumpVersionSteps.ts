@@ -71,11 +71,10 @@ Then("that version number looks different", (p: Project, world) => {
 });
 
 Then("the version number is updated in the pom", (p: Project, world) => {
-    const w = world as ProjectScenarioWorld;
-    const after = p.findFile(CERTAIN_INPUT_FILEPATH).content;
-    const passing = (after === CERTAIN_FILE_CONTENT_AFTER);
+    const after = p.findFile("pom.xml").content;
+    const passing = (after === POM_AFTER);
     if (!passing) {
-        console.log(`FAILURE: ${CERTAIN_INPUT_FILEPATH} --->\n${after}\n<---`);
+        console.log(`FAILURE: ${POM_AFTER} --->\n${after}\n<---`);
     }
     return passing;
 });
