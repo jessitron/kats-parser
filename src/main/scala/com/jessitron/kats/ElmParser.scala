@@ -121,7 +121,7 @@ object ElmParser extends RegexParsers {
     })
 
   private def sectionHeader =
-    "☞--" ~> positionedNode(("[A-Z\\s]+?\n".r) ^^ SyntaxNode.leaf("sectionHeader")).map(_.chomp)
+    "☞--+".r ~> positionedNode(("[A-Z\\s]+?\n".r) ^^ SyntaxNode.leaf("sectionHeader")).map(_.chomp)
 
   private def sectionContent: Parser[PositionedSyntaxNode] =
     positionedNode(rep(topLevel) ^^ { content =>
