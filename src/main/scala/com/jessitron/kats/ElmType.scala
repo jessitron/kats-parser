@@ -11,7 +11,10 @@ class ElmType extends TypeUnderFile {
     f.name.endsWith(".elm") && !f.path.contains("elm-stuff/")
 
   override def fileToRawNode(f: FileArtifact): Option[ParsedNode] = {
-    println(s"Parsing ${f.path} with Elm Parser version ${ElmParser.VERSION}")
+    if (System.getProperty("ELM_TYPE_DEBUG") != null) {
+      // this is a cheaty way to config but it's simple
+      println(s"Parsing ${f.path} with Elm Parser version ${ElmParser.VERSION}")
+    }
     //println(s"Attempting to parse ${f.path}")
     try {
       val result = ElmParser.parse(f.content)
