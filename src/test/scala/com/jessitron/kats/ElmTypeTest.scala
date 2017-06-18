@@ -5,12 +5,12 @@ import org.scalatest.FlatSpec
 
 class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
 
+
+  val sourceProjectLocation = "src/test/resources"
+
   it should "change my source code" in {
-    val sourceProjectLocation = "src/test/resources"
 
     val pmv = projectFromDirectory(sourceProjectLocation)
-
-
 
     {
       val expr =
@@ -43,10 +43,11 @@ class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
       println("New content: ------\n" + newContent + "\n--------")
     }
 
-    { val expr =
-      """/BeginnerProgram.elm/Elm()//functionDeclaration
-        |                          [@functionName='update']/body//caseExpression
-        |                              [/pivot[@value='msg']]""".stripMargin
+    {
+      val expr =
+        """/BeginnerProgram.elm/Elm()//functionDeclaration
+          |                          [@functionName='update']/body//caseExpression
+          |                              [/pivot[@value='msg']]""".stripMargin
 
       val v = evaluatePathExpression(pmv, expr)
 
@@ -57,4 +58,24 @@ class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
 
   }
 
+  // Property!
+  it should "always break a case clause into a pattern and a result" in {
+    val pmv = projectFromDirectory(sourceProjectLocation)
+
+    {
+      val expr =
+        """//Elm()//caseExpression/clause""".stripMargin
+
+      val v = evaluatePathExpression(pmv, expr)
+      v.foreach(clause => {
+        assert(clause.childrenNamed("result").length == 1 &&
+          clause.childrenNamed("pattern").length == 1,
+          "Case clause should have a pattern and a result:\n" + clause.value +
+            "\n" + MyTreeNodePrinting.drawUpdatable(clause))
+      })
+    }
+  }
+
 }
+
+

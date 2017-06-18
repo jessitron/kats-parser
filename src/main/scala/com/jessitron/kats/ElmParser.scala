@@ -33,7 +33,7 @@ object ElmProcessor {
 
 object ElmParser extends RegexParsers {
 
-  val VERSION = "0.2.2"
+  val VERSION = "0.2.3"
 
   val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=/|^%:!]+".r | "-"
 
@@ -296,8 +296,10 @@ object ElmParser extends RegexParsers {
 
     import ElmDecomposition.matchable
 
+    private def pattern: Parser[PositionedSyntaxNode] = wrap("pattern", matchable)
+
     private def caseClause: Parser[PositionedSyntaxNode] =
-      positionedNode(opt(comment) ~ opt(moveLeft) ~> matchable ~ "->" ~ expression("result") ^^ {
+      positionedNode(opt(comment) ~ opt(moveLeft) ~> pattern ~ "->" ~ expression("result") ^^ {
         case pattern ~ _ ~ result =>
           //  println(s"matched switch clause: ${pattern.values} -> ${result.values}")
           SyntaxNode.parent("clause", Seq(pattern, result))
@@ -406,7 +408,7 @@ object ElmParser extends RegexParsers {
     })
 
     private def deconstructorPattern = positionedNode(qualifiedUppercaseIdentifier("constructorName") ~ rep1(matchableWithClearPrecedence) ^^ {
-      case name ~ patterns => SyntaxNode.parent("deconstructorPattern", name +: patterns)
+      case name ~ patterns => SyntaxNode.parent("deconstructor", name +: patterns)
     })
 
     private def matcherInParens = "(" ~> matchable <~ opt("moveLeft") ~ ")"
