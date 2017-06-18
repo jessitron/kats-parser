@@ -33,7 +33,7 @@ object ElmProcessor {
 
 object ElmParser extends RegexParsers {
 
-  val VERSION = "0.2.5"
+  val VERSION = "0.2.6"
 
   val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=/|^%:!]+".r | "-"
 
@@ -197,7 +197,9 @@ object ElmParser extends RegexParsers {
         tupleLiteral |
         anonymousFunction |
         recordLiteral |
-        expressionInParens
+        constructorApplication |
+        expressionInParens |
+        hint("a function argument")
 
     private def elmExpressionThatMightResultInARecord: Parser[PositionedSyntaxNode] =
     // printAttempt("might be a record:") |
