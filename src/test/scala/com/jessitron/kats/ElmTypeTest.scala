@@ -76,6 +76,24 @@ class ElmTypeTest extends FlatSpec with RugLanguageExtensionTest {
     }
   }
 
+  // Property!
+  it should "always break a section into a sectionHeader and sectionContent" in {
+    val pmv = projectFromDirectory(sourceProjectLocation)
+
+    {
+      val expr =
+        """//Elm()//section""".stripMargin
+
+      val v = evaluatePathExpression(pmv, expr)
+      v.foreach(clause => {
+        assert(clause.childrenNamed("sectionHeader").length == 1 &&
+          clause.childrenNamed("sectionContent").length == 1,
+          "Section should have a sectionHeader and a sectionContent:\n" + clause.value +
+            "\n" + MyTreeNodePrinting.drawUpdatable(clause))
+      })
+    }
+  }
+
 }
 
 

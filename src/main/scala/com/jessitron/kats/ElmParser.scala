@@ -33,7 +33,7 @@ object ElmProcessor {
 
 object ElmParser extends RegexParsers {
 
-  val VERSION = "0.2.4"
+  val VERSION = "0.2.5"
 
   val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=/|^%:!]+".r | "-"
 
@@ -120,12 +120,19 @@ object ElmParser extends RegexParsers {
       case preSectionDeclarations ~ sections => SyntaxNode.parent("moduleBody", preSectionDeclarations ++ sections)
     })
 
-  def sectionHeader =
+  private def sectionHeader =
     "☞--" ~> positionedNode(("[A-Z\\s]+?\n".r) ^^ SyntaxNode.leaf("sectionHeader")).map(_.chomp)
+
+  private def sectionContent: Parser[PositionedSyntaxNode] =
+    positionedNode(rep(topLevel) ^^ { content =>
+      SyntaxNode.parent("sectionContent", content)
+    })
 
 
   def section =
-    positionedNode(sectionHeader ~ rep(topLevel) ^^ { case (header ~ fns) => SyntaxNode.parent("section", header +: fns) })
+    positionedNode(sectionHeader ~ sectionContent ^^ {
+      case (header ~ fns) => SyntaxNode.parent("section", Seq(header, fns))
+    })
 
 
   def qualifiedFunctionName: Parser[PositionedSyntaxNode] = positionedNode(opt(rep1sep(uppercaseIdentifier("component"), ".") <~ ".") ~ functionName ^^ {
