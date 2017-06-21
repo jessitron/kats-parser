@@ -288,7 +288,7 @@ object ElmParser extends RegexParsers {
       })
 
     private def tupleLiteral: Parser[PositionedSyntaxNode] =
-      positionedNode("(" ~> rep1sep(expression("tuplePart"), commaSeparator) <~ opt("moveLeft") ~ ")" ^^ { parts =>
+      positionedNode("(" ~> rep1sep(expression("tuplePart"), opt(moveLeft) ~ commaSeparator) <~ opt("moveLeft") ~ ")" ^^ { parts =>
         SyntaxNode.parent("tupleLiteral", parts)
       })
 

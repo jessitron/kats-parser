@@ -6,6 +6,17 @@ import Html.Events
 import Json.Decode
 
 
+
+someTupleWithACommaMovingLeft =
+    ( { one = List.map identity []
+      , two = "another"
+      }
+    , "yes"
+    )
+
+
+
+
 -- MODEL
 
 
