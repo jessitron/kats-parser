@@ -245,7 +245,7 @@ object ElmParser extends RegexParsers {
       })
 
     private def listLiteral: Parser[PositionedSyntaxNode] =
-      positionedNode("[" ~> repsep(expression("listItem"), commaSeparator) <~ opt(moveLeft) ~ "]" ^^ {
+      positionedNode("[" ~> repsep(expression("listItem"), opt(moveLeft) ~ commaSeparator) <~ opt(moveLeft) ~ "]" ^^ {
         items => SyntaxNode.parent("listLiteral", items)
       })
 
@@ -281,7 +281,7 @@ object ElmParser extends RegexParsers {
     def recordLiteral: Parser[PositionedSyntaxNode] =
       positionedNode("{" ~> opt(startingRecord) ~
         repsep(recordLiteralField, commaSeparator)
-        <~ opt("moveLeft") ~ "}" ^^ {
+        <~ opt(moveLeft) ~ "}" ^^ {
         case Some(startingRecord) ~ fields =>
           SyntaxNode.parent("recordLiteral", startingRecord +: fields)
         case None ~ fields => SyntaxNode.parent("recordLiteral", fields)
@@ -495,6 +495,14 @@ object ElmParser extends RegexParsers {
     parseAll(elmModule, content) match {
       case Success(result, next) => result
       case x: NoSuccess => throw new RuntimeException(x.toString)
+    }
+  }
+
+  /* for testing */
+  def parsePart(parser: Parser[PositionedSyntaxNode], input: String) = {
+    parse(parser, input) match {
+      case Success(result, next) => result
+      case boo: NoSuccess => throw new RuntimeException(boo.toString)
     }
   }
 
