@@ -33,7 +33,7 @@ object ElmProcessor {
 
 object ElmParser extends RegexParsers {
 
-  val VERSION = "0.2.7"
+  val VERSION = "0.2.8"
 
   val infixFunctionRegex: Parser[String] = "[\\+\\*<>&=/|^%:!]+".r | "-"
 
@@ -280,7 +280,7 @@ object ElmParser extends RegexParsers {
 
     def recordLiteral: Parser[PositionedSyntaxNode] =
       positionedNode("{" ~> opt(startingRecord) ~
-        repsep(recordLiteralField, commaSeparator)
+        repsep(recordLiteralField, opt(moveLeft) ~ commaSeparator)
         <~ opt(moveLeft) ~ "}" ^^ {
         case Some(startingRecord) ~ fields =>
           SyntaxNode.parent("recordLiteral", startingRecord +: fields)

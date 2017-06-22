@@ -16,7 +16,12 @@ type alias Model =
 
 init : ( Model, Cmd Msg )
 init =
-    ( { labels = [ { text = "Ordina", x = 100, y = 10 } ]
+    ( { labels =
+          [ { text = "Ordina"
+            , x = 100
+            , y = 10
+            }
+          ]
       , newLabel = ""
       , lastClick = Nothing
       }
@@ -149,8 +154,10 @@ requestFocus field_id =
     let
          handle result =
              case result of
-                 Ok () -> NoOp
-                 Err (Dom.NotFound id) -> FocusFieldNotFound id
+                 Ok () ->
+                     NoOp
+                 Err (Dom.NotFound id) ->
+                     FocusFieldNotFound id
     in
         Task.attempt handle (Dom.focus field_id)
 
