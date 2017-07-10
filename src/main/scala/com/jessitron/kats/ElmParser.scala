@@ -509,7 +509,7 @@ object ElmParser extends RegexParsers {
   def positionedNode(inner: Parser[SyntaxNode], label: Option[String] = None) = new Parser[PositionedSyntaxNode] {
     override def apply(in: Input): ParseResult[PositionedSyntaxNode] = {
       val start = handleWhiteSpace(in.source, in.offset)
-      println("Trying to parse: " + in.source.subSequence(in.offset, Math.min(in.source.length(), in.offset + 10 )))
+    //  println("Trying to parse: " + in.source.subSequence(in.offset, Math.min(in.source.length(), in.offset + 10 )))
       inner.apply(in) match {
         case Error(msg, next) => Error(msg, next)
         case Failure(msg, next) =>
