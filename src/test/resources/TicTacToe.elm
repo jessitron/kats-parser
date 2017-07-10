@@ -18,14 +18,6 @@ emptyBoard =
     TicTacToe
         Nothing
         Nothing
-        Nothing
-        Nothing
-        Nothing
-        Nothing
-        Nothing
-        Nothing
-        Nothing
-
 
 draw : Maybe Move -> Html msg
 draw move =
