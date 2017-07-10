@@ -24,10 +24,10 @@
             <artifactId>scala-parser-combinators_2.11</artifactId>
             <version>1.0.4</version>
         </dependency>
-    	<dependency>
+        <dependency>
             <groupId>com.atomist</groupId>
             <artifactId>rug</artifactId>
-            <version>1.0.1-JESS</version>
+            <version>1.0.0-m.4</version>
         </dependency>
     </dependencies>
 
@@ -120,6 +120,17 @@
             </build>
         </profile>
     </profiles>
+
+     <repositories>
+        <repository>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <id>public-atomist-release</id>
+            <name>Atomist Release</name>
+            <url>https://atomist.jfrog.io/atomist/libs-release</url>
+        </repository>
+    </repositories>
 
     <distributionManagement>
         <repository>
