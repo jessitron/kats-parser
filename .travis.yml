@@ -31,9 +31,9 @@ deploy:
   provider: releases
   api_key:
     secure: XMVzAeihb2paKyUTYRRsJisjy5HCesi0FZ5sPLgmNl3U8+wkY70xlcsoJ83g8aB7yaOO4GTBUI6BzHHsN5qXPfFIgVCVVmmN9yAo6qcxj7X2Q0n1l7biawVmgpqjJdwwVWbd876mdJziLoSRqhfjP6LVp+10EZ3d5WYQ6KuwCvMptI7Ar/MLNZab0ZaebexaQCS/Z+FKekglNSXETxUdlpM87do2ZUtSDQ4A6K8lKKOseSq0sQqzaShpRkYXNi3D3HMxMSs4Iy75Beslcgcq0InQLSHbjLNOTDvZTgONABa6atGwJ5n6WbS7yKTJNH6aTxcpJlsNs+CnrWpQOJBRcysRxldsCUqW6CPA+zpYSWSmQ8OE2U1Rq9yKAKmvaLRA9uom1N5lC8kOWs6UsRkSudgZUDEBWidJbwAhqg30yxtlMiZtcB01vzXtcv4C64nzI4tI8e38xxVc6ieS1FFPJkYg2t/xd+ywGB58LlC1/9l/7xZEZGiQXafpPzi4xlOjw1CItpPmlMdBdIhe3MTFWgXrpwQVp04TpH6wGr234JToJJLI3JObHGJOebE75l2fijXCZvBvX1MX+y8dL1LJDfx84GCa9JNaE+fI0VTdlhVBDnlTq24i77jFHcBgKu2JX3jImHJsoVlDyUfab4JSr9YsG5PcuwTJrwV1doIYY8w=
-  file: kats-parser.jar
   on:
-    repo: jessitron/kats-parser
+    tags: true
+    condition: $TRAVIS_TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+$
 before_install:
 - openssl aes-256-cbc -K $encrypted_e8a1e85022ec_key -iv $encrypted_e8a1e85022ec_iv
   -in atomist_sec.gpg.enc -out ~\/Desktop/atomist_sec.gpg -d
