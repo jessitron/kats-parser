@@ -1,0 +1,46 @@
+dist: trusty
+sudo: false
+language: java
+jdk:
+- oraclejdk8
+branches:
+  except:
+  - /\+travis\d+$/
+env:
+  global:
+  - secure: lveG/Zbh5LXHfuHY2g9p1Lq7v0862LMJXULXnaWoSgacgEudymBRovumRb5MTjuU7wHK57b4xceBT7+7B906S03h7eiM6UvLOZKmxqFvpcE0S5kLsyGQDgmXPztqf3412jTdV0b3W4Z5TRxDC+mpz409NduUFNbgmgEp2zsRTdOFk205bkIk4aVIGJrf9Qd1wICfsKpTks6C7fEyCzgnTleDtBPwWSv+rrHcyE7uzLM1l8imxj84fqe8UavcIygw8ufUUagnd+pR54PMAccGX2Ypd8WDW3a8Ri8b6giFdkuzsmPNt1Gc05MyjpajGtXdF5nMWkmj4KDmQCZPGWKBvUxJ0B66c6qe2VXpUZ/Cfllct9LYMw62LR6pJeqXXP+QmuxugaREPMifBqo64+UffmaCZSiD+f4ezUpBfgIl2BZgjwNOjf6YPK7cUPHC639wKo+DpC25c7+hLn/h0KxmKEkf/P9ehOXp/QBHqzAZzife7WtAetW2gjDqM+iFgBxwTjFHO4hhhOJ2Ma8iVwwjxL+5lDTFfMrCfowtOefdJUGQKnv3QwcHYz5soHRVIUrQcTUaq2Ga+e8QgIg+Gc/RHaqi0NNH4q/1kCXQcNtL4iodrqPFZd1UXBpgNV0SCx7W9vmgZEKaLsIk8CtYlVdQxGgDf0WOj9D0ftKN/k3Oj3E=
+  - secure: TWwNm2dpim9MEc/KNQwq+NLxsgXy13kSvNdNUABRlti1nucJRyv2OPNNDjvZXtkhcNL9nOJRsaEyT2odsKfNpIDDU6oVpslxKTDut4qQJcqqziNBnjJTfKYCyqzI1gzv+53oxCKp6bOqeEniK+Yz0SOQw+Wzb9Zv+s34j9ua1nHWQgTi5m5IVUf4qryqvI5xtEdjzqWDSllI1ah0DzcH3EB16GGGrq7yhI/pk97dOpbjcb0REyxPtlMjetByMljRRjMh46gWsgYOc3XqVJ88WrJ9ZM8ngQgKGcSWCjK0onERHAVS3i2srp1F+wOwgH7hRc0OkGLJOfkSfLS6LNstpPHVNvbaZGVH0C/OrcDWY6Nb5i0aPkVW9eZglFKaPLLgdzouX0CdF0JUUjtDyHlbC+7zn0sRCmBckymIDthOFR/oAcZ0/sgQTj+grUtZT/WX9/P9sQBy5xctB1swd8gq32Q8ETnR+ypXPjtTdYuUE7GFFfCxhYUG41aVjJx8/Rkvi6QnnQrXI2ZxPaEBtsq9tqBen9g6df3BFhOBZJ0TMOUFoBonlL5WNUrLUipIKQI2KEgbvEnP0B2t6BFFGN+y4a9+g2JplbZr8cYzUePQOlidTEaZljtBd/Ct9u/OmIHn81KK0UyWda1WXyofh0QVfJVPb2C15O4vxTsfKGLmJAs=
+  - secure: XhBZaOy7r/rp3RYJ39laReEeTA3waebmLK8J6l2GqRe441hnUVIca8ioQBL8lx9T3VguKoUe+ydCkO6bbZXQDglTyfpTMkmpFt9Sfti8ltYpYTS+JRoR3+fPwJl5FKN8mJBaUzf9IVnxVuyBtru3uN2sau9KHesThqNNUr2yWKEYCMEQ6d73gyLPtRYLUdEu4DyaBeuacO4X/UCPRNpBm6UScGZeT681sWNpG3hZViyjOW2J7OefUFLZBlyxCAhHdZ9xm0r2U5ULrfEjiKVDlTKE1GH1cdAY2TiGN68DefYDX9LZKDWBpfiuhW0ZQgd49ANjY7QL/lDLGZoxDw1BrBVAYIS4rGthXrNUpc49Gg07fmVmvOP4Pe9Unu8k6dLXLsIRcZytdJH/p4vUjIpThCfN5e+apecwjT/mKteyrUsWHUU6X357KXgkt9/Q5MEGgg4OVrHLSYjkogUO354100K+zjmNHfS4g2hNoWt4WfHA83iWmjaIHfmY/Ov+BkKdOFUvsvObMDPjJwH4lzYmC4xnNsH3kc1S/KdWXSRGipuvVEA+36IBciGQG3mEpJ0l/lbnjAdZpiWsS9mXvDqdOAvs++gOWgVpa5iL4+wX5JgXZhMmr8Y/lNa07F22NM5upnt0IDg7TzJ/TtjkSau5/wxsBlpd0N20By3TA+pdDfI=
+  - secure: P7TBsCEqSkfqTksk7wP8CtyghgbIXjq5UjT/2NJuNzxaKvctPveT6vg4lMOI7X8IkpWJmHDyL3FQlq1cKetWvCPDOmeyFoFRvRDTYw2nTNT5FqfxQ7p5CJzXDXwpqCpAAuSz5QuOCglli3WZy1QP6vIu9ew3tbwrrOBEjwFPrHazDPZk4dYNuBJjBOA1HamfNwvEZdeFo4Q7yRtJsF/OpbTgggb8AQ5vsK9KM7EkwHfd9QeGiQlMSEfo94T3GEFAhL8BVIpcZ9XrW3b4vQWKO/vl5uABG7Jlg7hrXv6yCcLcRsPoQMrjmymfmeMTRqYsmwhl0/ex7BqUKpVPWzsx7xQQMe79Ux032DEbahLgYxiOex75+6xGl4x1ilUUXpVF6Vm9ecfG9sAsF7GgOPD30bnOfax/NP4pemuubI5GY+eH2pH67AeEqkU9iQCoNcZBlwS8+7tpdwjozi85BHJo4eTJfyA6k+tiQAFHp+LnkrTAh+3hx4H0Ipach3a/6LK5TTBin5fmMUELxVXp/pd/731BQj8+lDYOlIbxBMBEP06rftVB+SFhJmKYqdWpVkd/Kjg7n0saoTsPGdOYyI343gIkXWYLa2d0b7zyNA2A6/jlHC5LEDspj8V0+OItTwK0Lj03UlCarEwCIOu/Hqiu6wAbAVU8YalF7Q0PC/qTm6o=
+install:
+- nvm install 6.9.3
+- npm install -g typescript
+script: bash src/main/scripts/travis-build.bash
+notifications:
+  email: false
+  webhooks:
+    on_success: always
+    on_failure: always
+    on_start: always
+    on_cancel: always
+    on_error: always
+    urls:
+    - https://webhook.atomist.com/travis
+cache:
+  directories:
+  - $HOME/.m2
+deploy:
+  provider: releases
+  api_key:
+    secure: bkbXzXvYn3OpU66tj5EcQ+/UBau8apIwG8a0/PJeLyLm+hjKd5HIV3bsBllb4FWmz1G4ybwZCcwKtlipvI4UF0WYDcs5HbpNF/g6OeFVuu1tR0LpRxv8h7Ss0HH6qa6VugYKWndBMDEhSP0INEAoiiaEV5Kj3+fb3x46nTABe0yCn4RKtsBzyOV7YxNb8PGM3F+/15eJI83JKX9AeO2Xk7O7p49mdkQvtXR0vU1jnPU/TbbiN9DbTS8oPuWMFdocjtgjgQAwNYZSpnWY9FeA7r4UNMy0Bg0v1yfcsZIzzk53hysO7xagjMEGXoPu860uLiPncoCOlJsYvP9n6QA4XJKdLIhPr6UsdcEbj/KymffWvMAQu9H0HB3r7yyMg6JrjBtuy3abBsO1D/FbL7DuTVE++aFIJVcCZc0qG64TZ5t56R0YdiMvWiasev5cymsZOsxVXVRBYsQ2btf17WMYiLB1D5VPeuJr4aD1ZxA2sp3b06kEUwsXTXZQiIAb50QB8uOTfEd2p4s1a/jVICYxp6kQc36+h99Fkw9fcvyTtYp/gAmrmXkoXr+Uy2OozjWMugjPMlJdW4FYmPA7ZxWOH05q7yzDevjBaIIO/KfuszTY/yx7WKgYj6f+qkCxAtS3RlAfzo3hY18oii6URpEcTsIBSKRiJiw4m/v4MPur/gk=
+  on:
+    tags: true
+    condition: $TRAVIS_TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+$
+before_install:
+- openssl aes-256-cbc -K $encrypted_a8460415f972_key -iv $encrypted_a8460415f972_iv
+  -in atomist_sec.gpg.enc -out atomist_sec.gpg -d
+addons:
+  apt:
+    packages:
+    - openssl
+    - gnupg
