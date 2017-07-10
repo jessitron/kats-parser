@@ -120,4 +120,11 @@
             </build>
         </profile>
 
+ <distributionManagement>
+        <repository>
+            <id>public-atomist-release</id>
+            <name>Atomist Release</name>
+            <url>https://atomist.jfrog.io/atomist/libs-release-local</url>
+        </repository>
+    </distributionManagement>
 </project>
