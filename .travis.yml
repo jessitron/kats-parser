@@ -34,8 +34,8 @@ deploy:
     tags: true
     condition: $TRAVIS_TAG =~ ^[0-9]+\.[0-9]+\.[0-9]+$
 before_install:
-- openssl aes-256-cbc -K $encrypted_a8460415f972_key -iv $encrypted_a8460415f972_iv
-  -in atomist_sec.gpg.enc -out atomist_sec.gpg -d
+- openssl aes-256-cbc -K $encrypted_e8a1e85022ec_key -iv $encrypted_e8a1e85022ec_iv
+  -in atomist_sec.gpg.enc -out ~\/Desktop/atomist_sec.gpg -d
 addons:
   apt:
     packages:
