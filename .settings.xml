@@ -2,13 +2,13 @@
   <servers>
     <server>
       <id>public-atomist-release</id>
-      <username>${env.MAVEN_USER}</username>
-      <password>${env.MAVEN_TOKEN}</password>
+      <username>${env.ATOMIST_REPO_USER}</username>
+      <password>${env.ATOMIST_REPO_TOKEN}</password>
     </server>
     <server>
       <id>public-atomist-dev</id>
-      <username>${env.MAVEN_USER}</username>
-      <password>${env.MAVEN_TOKEN}</password>
+      <username>${env.ATOMIST_REPO_USER}</username>
+      <password>${env.ATOMIST_REPO_TOKEN}</password>
     </server>
   </servers>
 </settings>
