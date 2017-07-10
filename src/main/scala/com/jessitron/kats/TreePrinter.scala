@@ -1,7 +1,5 @@
 package com.jessitron.kats
 
-import com.atomist.tree.UpdatableTreeNode
-
 object TreePrinter {
 
   /**
