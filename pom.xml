@@ -94,7 +94,7 @@
            </plugin>
         </plugins>
     </build>
-
+    <profiles>
      <profile>
             <id>signedRelease</id>
             <activation>
@@ -119,8 +119,9 @@
                 </plugins>
             </build>
         </profile>
+    </profiles>
 
- <distributionManagement>
+    <distributionManagement>
         <repository>
             <id>public-atomist-release</id>
             <name>Atomist Release</name>
