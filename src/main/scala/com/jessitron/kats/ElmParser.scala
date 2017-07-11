@@ -226,7 +226,7 @@ object ElmParser extends RegexParsers {
           case fn ~ args => SyntaxNode.parent("functionApplication", fn +: args)
         })
 
-    private def constructorApplication = positionedNode((qualifiedUppercaseIdentifier("calledConstructor") ~ rep(expression("argument"))) ^^ {
+    def constructorApplication = positionedNode((qualifiedUppercaseIdentifier("calledConstructor") ~ rep(wrap("argument", elmExpressionWithClearPrecedence))) ^^ {
       case fn ~ args => SyntaxNode.parent("constructorApplication", fn +: args)
     })
 

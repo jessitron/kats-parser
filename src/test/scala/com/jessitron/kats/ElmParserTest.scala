@@ -1,29 +1,36 @@
 package com.jessitron.kats
 
-import java.util.Timer
 
-import com.jessitron.kats.ParserPlay.sourceFile
 import org.scalatest.FlatSpec
 
 class ElmParserTest extends FlatSpec {
 
-//  it should "parse this Elm without an infinite loop" in {
-//
-//    val contentString = scala.io.Source.fromFile("src/test/resources/TicTacToe.elm").mkString
-//
-//    ElmParser.parse(ElmProcessor.addSpecials(contentString))
-//  }
+  it should "parse this Elm" in {
+    /* There's a story here: At the STL Polyglots meeting (7/17) we did some
+     * mob programming in Elm and we really needed this upgrade program
+     * but it didn't work, it just ran forever.
+     *
+     * Later it turns out, that was a pathological performance case.
+     * Fixed by being specific that arguments to a constructor are expressionsWithClearPrecedence.
+     */
 
-  def ns(qty: Int):String = {
-    Stream.continually("  N").take(qty).mkString("\n")
+    val contentString = scala.io.Source.fromFile("src/test/resources/TicTacToe.elm").mkString
+
+    ElmParser.parse(ElmProcessor.addSpecials(contentString))
   }
-  it should "not be horribly slow" in {
+
+
+  it should "not be horribly slow parsing a constructor with many arguments" in {
     val content = """TicTacToe""".stripMargin
 
-    for (i <- Range(1,8)) {
+    def ns(qty: Int):String = {
+      Stream.continually("  N").take(qty).mkString("\n")
+    }
+
+    for (i <- Range(1,10)) {
       val (t, _) = time(
-      ElmParser.parsePart(ElmParser.ElmExpression.expression("some Type parameters"), content + ns(i) + "\n"))
-      println(s"$i ${(t.toFloat) / (1000 * 1000 * 1000)}")
+      ElmParser.parsePart(ElmParser.ElmExpression.constructorApplication, content + ns(i) + "\n"))
+    //  println(s"$i ${(t.toFloat) / (1000 * 1000 * 1000)}")
     }
   }
 
