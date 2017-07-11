@@ -28,7 +28,7 @@ class TreePrinterTest extends FlatSpec with Matchers {
 
     val output = drawTree(input)
 
-    println(input.toString)
+    // println(input.toString)
 
     output should be(expected)
 
