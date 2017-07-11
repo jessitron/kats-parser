@@ -27,7 +27,7 @@
         <dependency>
             <groupId>com.atomist</groupId>
             <artifactId>rug</artifactId>
-            <version>1.0.1-JESS</version>
+            <version>1.0.0-m.5</version>
         </dependency>
     </dependencies>
 
