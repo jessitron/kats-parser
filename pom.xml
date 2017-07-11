@@ -6,6 +6,16 @@
     <artifactId>kats-parser</artifactId>
     <version>0.2.7</version>
 
+    <properties>
+        <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>
+        <timestamp>${maven.build.timestamp}</timestamp>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <java.version>1.8</java.version>
+        <scala.version>2.11.8</scala.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <rug.version>[1.0.0-m.5,2.0.0)</rug.version>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.scala-lang</groupId>
@@ -27,7 +37,7 @@
         <dependency>
             <groupId>com.atomist</groupId>
             <artifactId>rug</artifactId>
-            <version>1.0.0-m.5</version>
+            <version>${rug.version}</version>
         </dependency>
     </dependencies>
 
