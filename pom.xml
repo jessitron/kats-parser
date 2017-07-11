@@ -4,7 +4,7 @@
 
     <groupId>jessitron</groupId>
     <artifactId>kats-parser</artifactId>
-    <version>0.2.7</version>
+    <version>0.2.8</version>
 
     <properties>
         <maven.build.timestamp.format>yyyyMMddHHmmss</maven.build.timestamp.format>

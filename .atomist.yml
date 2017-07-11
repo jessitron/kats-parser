@@ -238,3 +238,19 @@ editor:
   parameters:
     - "component": "patch"
 
+---
+kind: "operation"
+client: "com.atomist:rug"
+version: "1.0.1-JESS"
+editor:
+  name: "BumpVersion"
+  group: "jessitron"
+  artifact: "parser"
+  version: "0.2.0"
+  origin:
+    repo: "git@github.com:jessitron/kats-parser.git"
+    branch: "master"
+    sha: "4871320"
+  parameters:
+    - "component": "patch"
+
