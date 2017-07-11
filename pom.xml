@@ -74,6 +74,7 @@
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <junitxml>.</junitxml>
                     <filereports>WhatIsThisTestSuite.txt</filereports>
+                    <parallel>false</parallel>
                 </configuration>
                 <executions>
                     <execution>
